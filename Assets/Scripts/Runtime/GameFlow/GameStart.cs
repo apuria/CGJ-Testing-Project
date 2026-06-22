@@ -24,4 +24,9 @@ public class GameStart : BaseState
     {
         
     }
+
+    public override void OnHandleEventMessage()
+    {
+        
+    }
 }

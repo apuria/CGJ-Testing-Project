@@ -1,17 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace UniFramework.Machine
 {
     /// <summary>
-    /// 状态机管理器：编排 IStateNode 的注册、切换、挂起、销毁
+    /// 状态机管理器：编排 IStateNode 的创建、切换、挂起、销毁
     /// </summary>
     public class StateMachine
     {
-        /// <summary>
-        /// 所有注册的节点，tag → IStateNode
-        /// </summary>
-        private readonly Dictionary<string, IStateNode> _nodes = new();
         private readonly Dictionary<string, IStateNode> _suspendedNodes = new();
         private readonly Dictionary<string, object> _blackboard = new();
 
@@ -55,63 +52,29 @@ namespace UniFramework.Machine
         }
 
         // =========================================================
-        // 注册节点（"创建状态机"）
-        // =========================================================
-
-        /// <summary>
-        /// 注册一个节点（创建"状态机"），泛型版本
-        /// </summary>
-        /// <typeparam name="TNode">实现 IStateNode 且有 new() 的节点类型</typeparam>
-        /// <param name="tag">字符串标记，用于切换和恢复</param>
-        /// <param name="data">绑定到此节点的数据</param>
-        public void AddNode<TNode>(string tag, IStateData data) where TNode : IStateNode, new()
-        {
-            AddNode(tag, new TNode(), data);
-        }
-
-        /// <summary>
-        /// 注册一个节点（创建"状态机"），实例版本
-        /// </summary>
-        /// <param name="tag">字符串标记，用于切换和恢复</param>
-        /// <param name="node">实现了 IStateNode 的节点实例</param>
-        /// <param name="data">绑定到此节点的数据</param>
-        public void AddNode(string tag, IStateNode node, IStateData data)
-        {
-            if (string.IsNullOrEmpty(tag))
-                throw new ArgumentNullException(nameof(tag));
-            if (node == null)
-                throw new ArgumentNullException(nameof(node));
-            if (data == null)
-                throw new ArgumentNullException(nameof(data));
-
-            if (_nodes.ContainsKey(tag))
-            {
-                UniLogger.Error($"State node tag already existed: {tag}");
-                return;
-            }
-            node.OnCreate(this, data);
-            _nodes.Add(tag, node);
-        }
-
-        // =========================================================
         // 启动
         // =========================================================
 
         /// <summary>
         /// 启动状态机，进入入口节点
         /// </summary>
-        /// <param name="tag">入口节点的 Tag</param>
-        public void Run(string tag)
+        /// <typeparam name="TState">实现 IStateNode 且有 new() 的状态类型</typeparam>
+        /// <param name="tag">状态实例的唯一标识，用于切换和恢复</param>
+        /// <param name="data">绑定到此状态的数据（可选）</param>
+        public void Run<TState>(string tag, IStateData data = null) where TState : IStateNode, new()
         {
+            if (string.IsNullOrEmpty(tag))
+                throw new ArgumentNullException(nameof(tag));
+
             if (_curNode != null)
             {
-                UniLogger.Warning($"State machine already running at '{_curNodeTag}', fallback to ChangeState.");
-                ChangeState(tag);
+                UniLogger.Warning($"State machine already running at '{_curNodeTag}', fallback to SwitchTo.");
+                SwitchTo<TState>(tag, data);
                 return;
             }
 
-            if (!_nodes.TryGetValue(tag, out var node))
-                throw new Exception($"Not found entry node: {tag}");
+            var node = new TState();
+            node.OnCreate(this, data);
 
             _curNode = node;
             _curNodeTag = tag;
@@ -122,95 +85,64 @@ namespace UniFramework.Machine
         }
 
         // =========================================================
-        // 销毁式切换
+        // 切换
         // =========================================================
 
         /// <summary>
-        /// 销毁式切换：退出当前节点并丢弃（不可恢复），进入目标节点
+        /// 切换状态：退出当前节点，进入目标节点
         /// </summary>
-        /// <param name="tag">目标节点的 Tag</param>
-        public void ChangeState(string tag)
+        /// <typeparam name="TState">实现 IStateNode 且有 new() 的状态类型</typeparam>
+        /// <param name="tag">状态实例的唯一标识，用于切换和恢复</param>
+        /// <param name="data">绑定到此状态的数据（可选）</param>
+        /// <param name="destroy">是否销毁前一个状态，默认为 true（销毁）；false 保留到挂起池可恢复</param>
+        public void SwitchTo<TState>(string tag, IStateData data = null, bool destroy = true) where TState : IStateNode, new()
         {
             if (string.IsNullOrEmpty(tag))
                 throw new ArgumentNullException(nameof(tag));
 
             if (_curNode == null)
             {
-                Run(tag);
+                Run<TState>(tag, data);
                 return;
             }
 
-            if (!_nodes.TryGetValue(tag, out var targetNode))
-            {
-                UniLogger.Error($"Can not found state node: {tag}");
-                return;
-            }
+            var node = new TState();
+            node.OnCreate(this, data);
 
-            UniLogger.Log($"{_curNodeTag} --> {tag} (destroy mode)");
+            string mode = destroy ? "destroy" : "suspend";
+            string savedInfo = destroy ? "" : $", saved '{_curNodeTag}'";
+            UniLogger.Log($"{_curNodeTag} --> {tag} ({mode} mode{savedInfo})");
 
-            // 退出当前节点并丢弃
+            // 退出当前节点
             _curNode.OnExit();
 
-            _preNodeTag = _curNodeTag;
-            _curNode = targetNode;
-            _curNodeTag = tag;
-
-            // 如果目标在挂起池中，移除（已恢复）
+            // 如果目标在挂起池中，先移除（即将被激活）
             _suspendedNodes.Remove(tag);
+
+            if (!destroy)
+            {
+                // 挂起当前节点，存入字典以备恢复
+                _suspendedNodes[_curNodeTag] = _curNode;
+            }
+            else
+            {
+                // 销毁当前节点
+                _curNode.OnDispose();
+            }
+
+            _preNodeTag = _curNodeTag;
+            _curNode = node;
+            _curNodeTag = tag;
 
             _curNode.OnEnter();
         }
 
-        // =========================================================
-        // 挂起式切换
-        // =========================================================
-
         /// <summary>
-        /// 挂起式切换：退出当前节点并存入字典（可恢复），进入目标节点
+        /// 切换至挂起池中指定 tag 的节点（非泛型重载，用于恢复已挂起的状态）
         /// </summary>
-        /// <param name="tag">目标节点的 Tag</param>
-        public void SuspendAndChange(string tag)
-        {
-            if (string.IsNullOrEmpty(tag))
-                throw new ArgumentNullException(nameof(tag));
-
-            if (_curNode == null)
-            {
-                Run(tag);
-                return;
-            }
-
-            if (!_nodes.TryGetValue(tag, out var targetNode))
-            {
-                UniLogger.Error($"Can not found state node: {tag}");
-                return;
-            }
-
-            UniLogger.Log($"{_curNodeTag} --> {tag} (suspend mode, saved '{_curNodeTag}')");
-
-            // 挂起当前节点
-            _curNode.OnExit();
-            _suspendedNodes[_curNodeTag] = _curNode;
-
-            _preNodeTag = _curNodeTag;
-            _curNode = targetNode;
-            _curNodeTag = tag;
-
-            // 如果目标在挂起池中，移除
-            _suspendedNodes.Remove(tag);
-
-            _curNode.OnEnter();
-        }
-
-        // =========================================================
-        // 恢复
-        // =========================================================
-
-        /// <summary>
-        /// 恢复被挂起的节点：挂起当前，从字典恢复目标
-        /// </summary>
-        /// <param name="tag">要恢复的挂起节点 Tag</param>
-        public void Resume(string tag)
+        /// <param name="tag">挂起节点的 Tag</param>
+        /// <param name="destroy">是否销毁当前状态，默认为 true（销毁）；false 保留到挂起池可恢复</param>
+        public void SwitchTo(string tag, bool destroy = true)
         {
             if (string.IsNullOrEmpty(tag))
                 throw new ArgumentNullException(nameof(tag));
@@ -221,20 +153,83 @@ namespace UniFramework.Machine
                 return;
             }
 
-            // 挂起当前节点
-            if (_curNode != null)
+            if (_curNode == null)
             {
-                UniLogger.Log($"{_curNodeTag} --> {tag} (resume, saved '{_curNodeTag}')");
-                _curNode.OnExit();
-                _suspendedNodes[_curNodeTag] = _curNode;
+                // 没有当前节点，直接恢复
+                _suspendedNodes.Remove(tag);
+                _preNodeTag = null;
+                _curNode = targetNode;
+                _curNodeTag = tag;
+
+                UniLogger.Log($"Restore state: {tag}");
+                _curNode.OnEnter();
+                return;
             }
 
+            string mode = destroy ? "destroy" : "suspend";
+            string savedInfo = destroy ? "" : $", saved '{_curNodeTag}'";
+            UniLogger.Log($"{_curNodeTag} --> {tag} ({mode} mode{savedInfo})");
+
+            _curNode.OnExit();
+
+            // 如果目标在挂起池中，先移除（即将被激活）
             _suspendedNodes.Remove(tag);
+
+            if (!destroy)
+            {
+                _suspendedNodes[_curNodeTag] = _curNode;
+            }
+            else
+            {
+                _curNode.OnDispose();
+            }
+
             _preNodeTag = _curNodeTag;
             _curNode = targetNode;
             _curNodeTag = tag;
 
             _curNode.OnEnter();
+        }
+
+        // =========================================================
+        // 通过 System.Type 切换（供事件系统等反射场景使用）
+        // =========================================================
+
+        private static readonly MethodInfo _switchToGenericMethod;
+
+        static StateMachine()
+        {
+            foreach (var m in typeof(StateMachine).GetMethods())
+            {
+                if (m.Name == "SwitchTo" && m.IsGenericMethod)
+                {
+                    _switchToGenericMethod = m;
+                    break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 通过 System.Type 切换状态（非泛型重载，供事件系统调用）
+        /// </summary>
+        /// <param name="stateType">实现 IStateNode 且有 new() 的状态类型</param>
+        /// <param name="tag">状态实例的唯一标识</param>
+        /// <param name="data">绑定到此状态的数据（可选）</param>
+        /// <param name="destroy">是否销毁前一个状态，默认为 true</param>
+        public void SwitchTo(System.Type stateType, string tag, IStateData data = null, bool destroy = true)
+        {
+            if (stateType == null)
+                throw new ArgumentNullException(nameof(stateType));
+
+            try
+            {
+                var generic = _switchToGenericMethod.MakeGenericMethod(stateType);
+                generic.Invoke(this, new object[] { tag, data, destroy });
+            }
+            catch (Exception ex)
+            {
+                UniLogger.Error($"Failed to switch to state type {stateType.Name}: {ex.Message}");
+            }
         }
 
         // =========================================================

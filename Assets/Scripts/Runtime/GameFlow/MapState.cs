@@ -25,4 +25,9 @@ public class MapState : BaseState
     {
         
     }
+
+    public override void OnHandleEventMessage()
+    {
+        
+    }
 }

@@ -34,4 +34,9 @@ public class BattleState : BaseState
     {
         
     }
+
+    public override void OnHandleEventMessage()
+    {
+        
+    }
 }

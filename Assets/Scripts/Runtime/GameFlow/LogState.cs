@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UniFramework.Machine;
-public class LogState: BaseState
+public class LogState : BaseState
 {
 
     //进入对话状态，播放对话
@@ -84,5 +84,10 @@ public class LogState: BaseState
     private void StartBranch()
     {
         //TODO: 使用状态机切换到分支选项状态
+    }
+
+    public override void OnHandleEventMessage()
+    {
+        
     }
 }

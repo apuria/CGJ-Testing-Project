@@ -1,4 +1,5 @@
 using UniFramework.Machine;
+using UniFramework.Event;
 
 /// <summary>
 /// 状态节点基类，实现 IStateNode 接口。
@@ -11,14 +12,18 @@ public class BaseState : IStateNode
     /// </summary>
     protected StateMachine Machine { get; private set; }
 
+    protected EventGroup eventGroup { get; private set; }
+
+    public bool IsStarted = false;
+
     public virtual void OnCreate(StateMachine machine, IStateData data)
     {
         Machine = machine;
+        eventGroup = new EventGroup();
     }
 
     public virtual void OnEnter()
     {
-
     }
 
     public virtual void OnExit()
@@ -29,5 +34,15 @@ public class BaseState : IStateNode
     public virtual void OnUpdate()
     {
 
+    }
+
+    public virtual void OnHandleEventMessage()
+    {
+        
+    }
+
+    public virtual void OnDispose()
+    {
+        eventGroup.RemoveAllListener();
     }
 }

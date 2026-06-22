@@ -7,7 +7,11 @@ public class Boot : MonoBehaviour
 {
 
 //TODO:
-/**/
+/*
+1. 
+2. 
+3. 
+*/
     void Awake()
     {
         Application.targetFrameRate = 60;
