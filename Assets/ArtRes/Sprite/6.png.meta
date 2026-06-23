@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: c99e10819b9f9594e9c19df30db35d19
+guid: 4581f1bf7bcd4304e9780e6bca01b0d9
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -97,43 +97,22 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Enemies4_0
+      name: 6_0
       rect:
         serializedVersion: 2
-        x: 219
-        y: 158
-        width: 781
-        height: 678
+        x: 964
+        y: 40
+        width: 1400
+        height: 1400
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 14f5000ecf340b34380ec8d8ae9e7bba
-      internalID: -447500404
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Enemies4_1
-      rect:
-        serializedVersion: 2
-        x: 1251
-        y: 163
-        width: 534
-        height: 534
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: a6f4eabcc35136942989b40c4dfcbbd6
-      internalID: 746153616
+      spriteID: 0e0957e2b7fc9fc498f782e9c6e5b295
+      internalID: -379682510
       vertices: []
       indices: 
       edges: []
@@ -142,15 +121,14 @@ TextureImporter:
     physicsShape: []
     bones: []
     spriteID: 5e97eb03825dee720800000000000000
-    internalID: 0
+    internalID: 1537655665
     vertices: []
     indices: 
     edges: []
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      Enemies4_0: -447500404
-      Enemies4_1: 746153616
+      6_0: -379682510
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
