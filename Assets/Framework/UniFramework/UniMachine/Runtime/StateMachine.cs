@@ -254,6 +254,28 @@ namespace UniFramework.Machine
         }
 
         // =========================================================
+        // 清理
+        // =========================================================
+
+        /// <summary>
+        /// 清空所有挂起的状态节点，并执行每个节点的 OnDispose
+        /// </summary>
+        public void ClearSuspendedNodes()
+        {
+            if (_suspendedNodes.Count == 0)
+                return;
+
+            UniLogger.Log($"Clearing all suspended nodes, count: {_suspendedNodes.Count}");
+
+            foreach (var node in _suspendedNodes.Values)
+            {
+                node.OnDispose();
+            }
+
+            _suspendedNodes.Clear();
+        }
+
+        // =========================================================
         // 黑板
         // =========================================================
 

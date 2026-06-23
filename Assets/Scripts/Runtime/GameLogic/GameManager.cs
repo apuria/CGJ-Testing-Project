@@ -21,6 +21,8 @@ public class GameManager : SingletonMono<GameManager>
     private EventGroup eventGroup;
     private PlayerData playerData; 
 
+    public PlayerData PlayerData => playerData;
+
 #region 生命周期
     void Awake()
     {
@@ -76,11 +78,13 @@ public class GameManager : SingletonMono<GameManager>
     public void SavePlayerData()
     {
         //TODO: 用Json管理器保存玩家数据
+        JsonMgr.Instance.SaveData(playerData, "PlayerData");
     }
 
     public void LoadPlayerData()
     {
         //TODO: 用Json管理器保存玩家数据
+        playerData = JsonMgr.Instance.LoadData<PlayerData>("PlayerData");
     }
 
     public void StartANewGame()
@@ -91,6 +95,11 @@ public class GameManager : SingletonMono<GameManager>
 #endregion
 
 #region 游戏流程配置
+
+    [SerializeField]
+    public GameNode StartNode;
+    [SerializeField]
+    public GameNode EndNode;
 
     [SerializeField]
     [Tooltip("游戏流程的 6 个节点配置，每个节点对应一个状态类型及其 Setting")]
@@ -110,5 +119,14 @@ public class GameManager : SingletonMono<GameManager>
     public IReadOnlyList<GameNode> GameNodes => gameNodes;
 
 #endregion
+
+    public void NextNode()
+    {
+        //TODO:
+        /*
+        1. 切换到这个节点的状态
+        2. 让PlayerData.currentNodeIndex+1
+        */
+    }
 
 }

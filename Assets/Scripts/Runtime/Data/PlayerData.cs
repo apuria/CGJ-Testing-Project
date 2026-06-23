@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class PlayerData
 {
-//TODO:
+//TODO: 
 /*
 1. 玩家所在游戏节点
 2. 记录玩家关键选择
@@ -15,16 +15,21 @@ public class PlayerData
     /// 玩家所在游戏节点
     /// 完成当前节点后，才会进入下一个节点
     /// </summary>
-    enum Flow
+    public enum Flow
     {
-        Start = 0,
-        //TODO:
-        //更多的节点
+        Start = -1,
+        Node1,
+        Node2,
+        Node3,
+        Node4,
+        Node5,
+        Node6,
+        End
     }
 
     private Flow nowFlow = Flow.Start;
 
-    public string NowFlow => nowFlow.ToString();
+    public Flow NowFlow => nowFlow;
 
     public void NextFlow()
     {

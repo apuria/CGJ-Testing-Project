@@ -54,6 +54,10 @@ public class LogState : BaseState
                 // 开始分支选项
                 StartBranch();
                 break;
+            case EOnEnd.GoBackToMap:
+                // 回到地图
+                GoBackToMap();
+                break;
         }
     }
 
@@ -84,6 +88,11 @@ public class LogState : BaseState
     private void StartBranch()
     {
         //TODO: 使用状态机切换到分支选项状态
+    }
+
+    private void GoBackToMap()
+    {
+        //TODO: 使用状态机切换到地图状态
     }
 
     public override void OnHandleEventMessage()

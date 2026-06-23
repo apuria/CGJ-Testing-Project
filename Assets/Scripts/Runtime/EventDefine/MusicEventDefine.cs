@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class MusicEventDefine
 {
-//TODO:
+//TODO: 音乐事件定义
 /*
 1. 播放背景音乐
 2. 播放音效

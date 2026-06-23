@@ -21,6 +21,10 @@ public enum EOnEnd
     /// 开始分支选项
     /// </summary>
     StartBranch,
+    /// <summary>
+    /// 回到地图
+    /// </summary>
+    GoBackToMap
 }
 
 public enum TalkingSpeaker

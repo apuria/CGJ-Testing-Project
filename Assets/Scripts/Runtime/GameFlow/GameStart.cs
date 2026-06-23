@@ -4,6 +4,7 @@ using UnityEngine;
 using UniFramework.Machine;
 public class GameStart : BaseState
 {
+
     
     public override void OnCreate(StateMachine machine, IStateData data)
     {
