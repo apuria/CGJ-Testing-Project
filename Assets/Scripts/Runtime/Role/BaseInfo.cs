@@ -6,7 +6,10 @@ public class BaseInfo : ScriptableObject
 {
 //TODO: 基础信息
 /*
-1. 攻击特效
+1. 攻击特效 + 敌人受击特效
+2. 立绘
+3. 头像
+4. 缩放比例
 */
     public string name;
     public int maxHp;

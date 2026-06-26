@@ -6,6 +6,9 @@ using UniFramework.Machine;
 [CreateAssetMenu(fileName = "New Branch", menuName = "Branch/New Branch")]
 public class BranchSetting : ScriptableObject, IStateData
 {
+    [Tooltip("当前分支选项对应的选择配置")]
+    public string id;
+
     [Tooltip("分支选项列表")]
     public List<Branch> branches;
 

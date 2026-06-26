@@ -19,4 +19,11 @@ MonoBehaviour:
   endEvent: 1
   endDialogue: {fileID: 0}
   endBranch: {fileID: 0}
-  midEvents: []
+  midEvents:
+  - triggerType: 0
+    targetIndex: 0
+    hpPercentage: 50
+    turnCount: 1
+    action: 0
+    dialogue: {fileID: 0}
+    branch: {fileID: 0}

@@ -129,6 +129,8 @@ public class BattleSetting : ScriptableObject, IStateData
     4. 结束事件, 结束做什么的枚举
     5. 中途满足特定条件的事件, 做什么的枚举
     */
+    
+
 #region 事件
     [Header("战斗场景")]
     [Tooltip("战斗场景名称")]
