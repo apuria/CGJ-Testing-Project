@@ -960,6 +960,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aee57bc76506cc342b97690d010df78f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mainRole: {fileID: 0}
+  roleList: []
   StartNode:
     nodeName: 
     stateType: 0

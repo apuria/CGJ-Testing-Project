@@ -13,26 +13,48 @@ public enum GameState
 
 public class GameManager : SingletonMono<GameManager>
 {
-//TODO:
+//TODO: 游戏管理器
 /*
-
+1. 
+2. 
 */
     private StateMachine stateMachine;
     private EventGroup eventGroup;
     private PlayerData playerData; 
 
     public PlayerData PlayerData => playerData;
+    [SerializeField]
+    public InGameData inGameData;
+
+    
+    public RoleInfo mainRole;
+    public List<RoleInfo> roleList = new();
 
 #region 生命周期
-    void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         stateMachine = new StateMachine();
         eventGroup = new EventGroup();
     }
 
     void Start()
     {
-        
+        // 状态切换事件
+        eventGroup.AddListener<StateEventDefine.ChangeState>(OnHandleEventMessage);
+        eventGroup.AddListener<StateEventDefine.BackToPrevState>(OnHandleEventMessage);
+
+        // 场景流程事件
+        eventGroup.AddListener<SceneEventDefine.StartGame>(OnHandleEventMessage);
+        eventGroup.AddListener<SceneEventDefine.EndGame>(OnHandleEventMessage);
+        eventGroup.AddListener<SceneEventDefine.NodeGame>(OnHandleEventMessage);
+
+        // 游戏数据事件
+        eventGroup.AddListener<GameEventDefine.ContinueGame>(OnHandleEventMessage);
+        eventGroup.AddListener<GameEventDefine.NewGame>(OnHandleEventMessage);
+        eventGroup.AddListener<GameEventDefine.SaveProgress>(OnHandleEventMessage);
+        eventGroup.AddListener<GameEventDefine.ReturnToMainMenu>(OnHandleEventMessage);
+        eventGroup.AddListener<GameEventDefine.QuitGame>(OnHandleEventMessage);
     }
 
     void Update()
@@ -71,34 +93,73 @@ public class GameManager : SingletonMono<GameManager>
 
             stateMachine.SwitchTo(prevTag, backMsg.destroy);
         }
+        else if (message is SceneEventDefine.StartGame)
+        {
+            StartGameEvent();
+        }
+        else if (message is SceneEventDefine.EndGame)
+        {
+            EndGameEvent();
+        }
+        else if (message is SceneEventDefine.NodeGame)
+        {
+            NodeGameEvent();
+        }
+        else if (message is GameEventDefine.ContinueGame)
+        {
+            LoadPlayerData();
+            stateMachine.SwitchTo<MapState>("MapState");
+        }
+        else if (message is GameEventDefine.NewGame)
+        {
+            StartANewGame();
+            stateMachine.SwitchTo<MapState>("MapState");
+        }
+        else if (message is GameEventDefine.SaveProgress)
+        {
+            SavePlayerData();
+        }
+        else if (message is GameEventDefine.ReturnToMainMenu)
+        {
+            ReturnToMainMenuEvent();
+        }
+        else if (message is GameEventDefine.QuitGame)
+        {
+            QuitGameEvent();
+        }
     }
 #endregion
 
 #region 玩家数据
     public void SavePlayerData()
     {
-        //TODO: 用Json管理器保存玩家数据
         JsonMgr.Instance.SaveData(playerData, "PlayerData");
     }
 
     public void LoadPlayerData()
     {
-        //TODO: 用Json管理器保存玩家数据
         playerData = JsonMgr.Instance.LoadData<PlayerData>("PlayerData");
     }
 
     public void StartANewGame()
     {
-        //TODO: 直接让playerData重置
         playerData = new PlayerData();
+    }
+
+    public void AddBranchChoose(string id, string choose)
+    {
+        playerData.branchList[id] =  choose;
     }
 #endregion
 
 #region 游戏流程配置
 
+    [Header("游戏流程事件")]
     [SerializeField]
+    [Tooltip("开始游戏事件节点，游戏启动时触发")]
     public GameNode StartNode;
     [SerializeField]
+    [Tooltip("结束游戏事件节点，游戏结束时触发")]
     public GameNode EndNode;
 
     [SerializeField]
@@ -120,13 +181,122 @@ public class GameManager : SingletonMono<GameManager>
 
 #endregion
 
+#region 游戏流程控制
+
+    /// <summary>
+    /// 跳转到下一个节点
+    /// </summary>
     public void NextNode()
     {
-        //TODO:
-        /*
-        1. 切换到这个节点的状态
-        2. 让PlayerData.currentNodeIndex+1
-        */
+        playerData.NextFlow();
     }
 
+    /// <summary>
+    /// 根据当前节点类型，触发对应事件
+    /// </summary>
+    public void StartGameEvent()
+    {
+        switch (StartNode.stateType)
+        {
+            case GameState.Battle:
+                StartBattle(StartNode.battleSetting);
+                break;
+            case GameState.DiaLogue:
+                StartDiaLogue(StartNode.dialogueSetting);
+                break;
+            case GameState.Branch:
+                StartBranch(StartNode.branchSetting);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// 根据当前节点类型，触发对应事件
+    /// </summary>
+    public void EndGameEvent()
+    {
+        switch (EndNode.stateType)
+        {
+            case GameState.Battle:
+                StartBattle(EndNode.battleSetting);
+                break;
+            case GameState.DiaLogue:
+                StartDiaLogue(EndNode.dialogueSetting);
+                break;
+            case GameState.Branch:
+                StartBranch(EndNode.branchSetting);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// 根据当前节点类型，触发对应事件
+    /// </summary>
+    public void NodeGameEvent()
+    {
+        switch (gameNodes[(int)playerData.NowFlow].stateType)
+        {
+            case GameState.Battle:
+                StartBattle(gameNodes[(int)playerData.NowFlow].battleSetting);
+                break;
+            case GameState.DiaLogue:
+                StartDiaLogue(gameNodes[(int)playerData.NowFlow].dialogueSetting);
+                break;
+            case GameState.Branch:
+                StartBranch(gameNodes[(int)playerData.NowFlow].branchSetting);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// 开始战斗
+    /// </summary>
+    /// <param name="battleSetting"></param>
+    public void StartBattle(BattleSetting battleSetting)
+    {
+        stateMachine.SwitchTo<BattleState>("BattleState", battleSetting);
+    }
+
+    /// <summary>
+    /// 开始对话
+    /// </summary>
+    /// <param name="dialogueSetting"></param>
+    public void StartDiaLogue(DialogueSetting dialogueSetting)
+    {
+        stateMachine.SwitchTo<DialogueState>("DialogueState", dialogueSetting);
+    }
+
+    /// <summary>
+    /// 开始分支选项
+    /// </summary>
+    /// <param name="branchSetting"></param>
+    public void StartBranch(BranchSetting branchSetting)
+    {
+        stateMachine.SwitchTo<BranchState>("BranchState", branchSetting);
+    }
+
+    /// <summary>
+    /// 返回主菜单
+    /// </summary>
+    public void ReturnToMainMenuEvent()
+    {
+        SavePlayerData();
+        playerData = null; // 清空玩家数据
+        stateMachine.SwitchTo<GameStart>("GameStart");
+    }
+
+    /// <summary>
+    /// 退出游戏
+    /// </summary>
+    public void QuitGameEvent()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        SavePlayerData();
+        Application.Quit();
+#endif
+    }
+
+#endregion
 }

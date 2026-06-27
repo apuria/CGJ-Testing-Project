@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UniFramework.Machine;
+using UniFramework.Event;
 
 public class BranchState : BaseState
 {
@@ -23,9 +24,7 @@ public class BranchState : BaseState
 
     public override void OnEnter()
     {
-
-        
-
+        eventGroup.AddListener<BranchEventDefine.ChooseBranch>(OnHandleEventMessage);
     }
 
     public override void OnExit()
@@ -38,9 +37,12 @@ public class BranchState : BaseState
         
     }
 
-    public override void OnHandleEventMessage()
+    public override void OnHandleEventMessage(IEventMessage message)
     {
-        
+        if(message is BranchEventDefine.ChooseBranch chooseBranch)
+        {
+            GameManager.Instance.AddBranchChoose(branchSetting.id, branchSetting.branches[chooseBranch.branchId].chosen);
+        }
     }
 
     public void Continue()
@@ -50,23 +52,54 @@ public class BranchState : BaseState
         {
             case EOnEnd.NextDialogue:
                 // 进入下一个对话
+                NextDialogue();
                 break;
             case EOnEnd.StartBattle:
                 // 开启战斗
+                StartBattle();
                 break;
             case EOnEnd.GoBackToLastState:
                 // 回到上一个状态
+                GoBackToLastState();
                 break;
             case EOnEnd.StartBranch:
                 // 开始新的分支选项
+                StartBranch();
                 break;
             case EOnEnd.GoBackToMap:
                 // 回到地图
-                //TODO: 状态机清空所有挂起状态
-                //TODO: 状态机回到地图状态
+                GoBackToMap();
                 break;
         }
     }
 
+    private void NextDialogue()
+    {
+        // 使用状态机切换到对话状态
+        StateEventDefine.ChangeState.SendEventMessage<DialogueState>("LogState", branchSetting.nextDialogue);
+    }
 
+    private void StartBattle()
+    {
+        // 使用状态机切换到战斗状态
+        StateEventDefine.ChangeState.SendEventMessage<BattleState>("BattleState", branchSetting.battleSetting);
+    }
+
+    private void GoBackToLastState()
+    {
+        // 使用状态机切换到上一个状态
+        StateEventDefine.BackToPrevState.SendEventMessage();
+    }
+
+    private void StartBranch()
+    {
+        // 使用状态机切换到分支选项状态
+        StateEventDefine.ChangeState.SendEventMessage<BranchState>("BranchState", branchSetting.nextBranch);
+    }
+
+    private void GoBackToMap()
+    {
+        // 使用状态机切换到地图状态
+        StateEventDefine.ChangeState.SendEventMessage<MapState>("MapState");
+    }
 }

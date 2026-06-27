@@ -8,6 +8,7 @@ using UnityEngine;
 [CustomEditor(typeof(BranchSetting))]
 public class BranchSettingEditor : Editor
 {
+    private SerializedProperty idProp;
     private SerializedProperty branchesProp;
     private SerializedProperty onEndProp;
     private SerializedProperty nextDialogueProp;
@@ -16,6 +17,7 @@ public class BranchSettingEditor : Editor
 
     private void OnEnable()
     {
+        idProp = serializedObject.FindProperty("id");
         branchesProp = serializedObject.FindProperty("branches");
         onEndProp = serializedObject.FindProperty("onEnd");
         nextDialogueProp = serializedObject.FindProperty("nextDialogue");
@@ -26,6 +28,11 @@ public class BranchSettingEditor : Editor
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
+
+        // ── ID ──
+        EditorGUILayout.PropertyField(idProp, new GUIContent("ID", "当前分支选项对应的选择配置"));
+
+        EditorGUILayout.Space();
 
         // ── 分支选项列表 ──
         EditorGUILayout.PropertyField(branchesProp, new GUIContent("Branches"), true);

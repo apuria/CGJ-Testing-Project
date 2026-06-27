@@ -6,7 +6,7 @@ using UnityEngine;
 public enum EOnEnd
 {
     /// <summary>
-    /// 下一个对话
+    /// 下一句话
     /// </summary>
     NextDialogue,
     /// <summary>
@@ -24,7 +24,11 @@ public enum EOnEnd
     /// <summary>
     /// 回到地图
     /// </summary>
-    GoBackToMap
+    GoBackToMap, 
+    /// <summary>
+    /// 下一个对话
+    /// </summary>
+    NextLog
 }
 
 public enum TalkingSpeaker
@@ -50,8 +54,14 @@ public class Dialogue
     
 
     public EOnEnd onEnd = EOnEnd.NextDialogue;
+
+    [Tooltip("结束后开启的战斗配置（onEnd = StartBattle 时使用）")]
     public BattleSetting Battle;
 
-    public BranchSetting BranchDialogue;
+    [Tooltip("结束后开启的分支配置（onEnd = StartBranch 时使用）")]
+    public BranchSetting Branch;
+
+    [Tooltip("结束后的下一个对话（onEnd = NextLog 时使用）")]
+    public DialogueSetting NextLog;
 
 }

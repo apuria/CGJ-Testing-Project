@@ -20,7 +20,7 @@ public class GameNode
     public BattleSetting battleSetting;
 
     [Tooltip("拖入 DialogueSettings")]
-    public DialogueSettings dialogueSetting;
+    public DialogueSetting dialogueSetting;
 
     [Tooltip("拖入 BranchSetting")]
     public BranchSetting branchSetting;

@@ -6,7 +6,7 @@ using UnityEngine;
 /// hasBackground 勾选后才显示 BackGround 字段。
 /// 其余字段保持默认显示效果不变。
 /// </summary>
-[CustomEditor(typeof(DialogueSettings))]
+[CustomEditor(typeof(DialogueSetting))]
 public class DialogueSettingsEditor : Editor
 {
     private SerializedProperty hasBackgroundProp;

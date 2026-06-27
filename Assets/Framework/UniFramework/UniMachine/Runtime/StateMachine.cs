@@ -73,6 +73,14 @@ namespace UniFramework.Machine
                 return;
             }
 
+            // 如果挂起池中已有同名 tag 的节点，先销毁
+            if (_suspendedNodes.TryGetValue(tag, out var oldSuspended))
+            {
+                UniLogger.Log($"Destroy suspended node with same tag: {tag}");
+                oldSuspended.OnDispose();
+                _suspendedNodes.Remove(tag);
+            }
+
             var node = new TState();
             node.OnCreate(this, data);
 
@@ -116,8 +124,13 @@ namespace UniFramework.Machine
             // 退出当前节点
             _curNode.OnExit();
 
-            // 如果目标在挂起池中，先移除（即将被激活）
-            _suspendedNodes.Remove(tag);
+            // 如果目标在挂起池中，先销毁旧的挂起节点（同名事件触发时销毁旧节点）
+            if (_suspendedNodes.TryGetValue(tag, out var oldSuspended))
+            {
+                UniLogger.Log($"Destroy suspended node with same tag: {tag}");
+                oldSuspended.OnDispose();
+                _suspendedNodes.Remove(tag);
+            }
 
             if (!destroy)
             {

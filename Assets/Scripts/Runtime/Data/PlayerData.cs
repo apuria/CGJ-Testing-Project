@@ -2,10 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
 public class PlayerData
 {
-//TODO: 
 /*
 1. 玩家所在游戏节点
 2. 记录玩家关键选择
@@ -36,6 +34,5 @@ public class PlayerData
         nowFlow++;
     }
 
-    
-
+    public Dictionary<string, string> branchList = new();
 }

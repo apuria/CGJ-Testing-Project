@@ -23,6 +23,14 @@ public class GameNodeDrawer : PropertyDrawer
         var dialogueProp = property.FindPropertyRelative("dialogueSetting");
         var branchProp = property.FindPropertyRelative("branchSetting");
 
+        // 子属性不存在时，回退为默认绘制
+        if (stateTypeProp == null)
+        {
+            EditorGUI.PropertyField(position, property, label, true);
+            EditorGUI.EndProperty();
+            return;
+        }
+
         // 背景框
         Rect bgRect = new Rect(position.x, position.y, position.width, GetPropertyHeight(property, label));
         EditorGUI.HelpBox(bgRect, string.Empty, MessageType.None);
@@ -30,6 +38,15 @@ public class GameNodeDrawer : PropertyDrawer
         float y = position.y + Padding;
         float x = position.x + Padding;
         float w = position.width - Padding * 2;
+
+        // ── 第零行：字段标签头（显示 Tooltip 提示） ──
+        var headerStyle = new GUIStyle(EditorStyles.boldLabel)
+        {
+            fontSize = 12,
+        };
+        Rect headerRect = new Rect(x, y, w, LineHeight);
+        EditorGUI.LabelField(headerRect, label, headerStyle);
+        y += LineHeight + Padding;
 
         // ── 第一行：Icon（带预览） ──
         float row1H = IconPreviewSize;
@@ -87,12 +104,16 @@ public class GameNodeDrawer : PropertyDrawer
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
     {
-        var dialogueProp = property.FindPropertyRelative("dialogueSetting");
         var stateTypeProp = property.FindPropertyRelative("stateType");
+        // 子属性不存在时，返回默认高度
+        if (stateTypeProp == null)
+            return EditorGUI.GetPropertyHeight(property, label, true);
+
+        var dialogueProp = property.FindPropertyRelative("dialogueSetting");
         var currentType = (GameState)stateTypeProp.enumValueIndex;
 
         float extraHeight = 0f;
-        if (currentType == GameState.DiaLogue && dialogueProp.objectReferenceValue != null)
+        if (currentType == GameState.DiaLogue && dialogueProp != null && dialogueProp.objectReferenceValue != null)
         {
             // DialogueSettings 内联：对象引用行 + hasBackground 行 + 可能的 BackGround 行
             extraHeight = LineHeight + Padding; // 对象字段额外一行
@@ -105,7 +126,8 @@ public class GameNodeDrawer : PropertyDrawer
             }
         }
 
-        return IconPreviewSize + LineHeight * 3 + Padding * 5 + extraHeight;
+        // 标签头 + Icon + 名称行 + 类型枚举行 + 设置行
+        return LineHeight + Padding + IconPreviewSize + LineHeight * 3 + Padding * 5 + extraHeight;
     }
 
     /// <summary>

@@ -9,14 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9d45e8793e655744a8a1169da8fe49bc, type: 3}
-  m_Name: New Battle Setting
+  m_Script: {fileID: 11500000, guid: b6845448b4b1de84f9f9e67696af3c1b, type: 3}
+  m_Name: EnemyInfo
   m_EditorClassIdentifier: 
-  enemies: []
-  startEvent: 0
-  startDialogue: {fileID: 0}
-  startBranch: {fileID: 0}
-  endEvent: 0
-  endDialogue: {fileID: 0}
-  endBranch: {fileID: 0}
-  midEvents: []
+  name: 
+  maxHp: 0
+  hp: 0
+  maxMp: 0
+  mp: 0
+  attack: 0
+  defense: 0
+  speed: 0

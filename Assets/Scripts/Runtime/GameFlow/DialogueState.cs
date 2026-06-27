@@ -2,11 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UniFramework.Machine;
-public class LogState : BaseState
+using UnityEngine.XR;
+using UniFramework.Event;
+public class DialogueState : BaseState
 {
 
     //进入对话状态，播放对话
-    public DialogueSettings nowDialogue;
+    public DialogueSetting nowDialogue;
 
     public bool canGoNext = false;
 
@@ -15,7 +17,7 @@ public class LogState : BaseState
     public override void OnCreate(StateMachine machine, IStateData data)
     {
         base.OnCreate(machine, data);
-        nowDialogue = data as DialogueSettings;
+        nowDialogue = data as DialogueSetting;
     }
 
     public override void OnEnter()
@@ -77,25 +79,29 @@ public class LogState : BaseState
 
     private void StartBattle()
     {
-        //TODO: 使用状态机切换到战斗状态, 而且要使用删除当前状态的切换状态
+        //使用状态机切换到战斗状态, 而且要使用删除当前状态的切换状态
+        StateEventDefine.ChangeState.SendEventMessage<BattleState>("BattleState", nowDialogue.dialogues[index].Battle);
     }
 
     private void GoBackToLastState()
     {
-        //TODO: 使用状态机切换到上一个状态
+        //使用状态机切换到上一个状态
+        StateEventDefine.BackToPrevState.SendEventMessage();
     }
 
     private void StartBranch()
     {
-        //TODO: 使用状态机切换到分支选项状态
+        //使用状态机切换到分支选项状态
+        StateEventDefine.ChangeState.SendEventMessage<BranchState>("BranchState", nowDialogue.dialogues[index].Branch, false);
     }
 
     private void GoBackToMap()
     {
-        //TODO: 使用状态机切换到地图状态
+        //使用状态机切换到地图状态
+        StateEventDefine.ChangeState.SendEventMessage<MapState>("MapState");
     }
 
-    public override void OnHandleEventMessage()
+    public override void OnHandleEventMessage(IEventMessage message)
     {
         
     }

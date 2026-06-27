@@ -8,47 +8,60 @@ using UnityEngine;
 [CustomEditor(typeof(BattleSetting))]
 public class BattleSettingEditor : Editor
 {
-    private SerializedProperty battleSceneNameProp;
     private SerializedProperty enemiesProp;
 
     // 开始事件
     private SerializedProperty startEventProp;
     private SerializedProperty startDialogueProp;
+    private SerializedProperty startBranchProp;
 
-    // 结束事件
-    private SerializedProperty endEventProp;
-    private SerializedProperty endDialogueProp;
-    private SerializedProperty endBranchProp;
+    // 战斗胜利事件
+    private SerializedProperty winEventProp;
+    private SerializedProperty winDialogueProp;
+    private SerializedProperty winBranchProp;
+
+    // 战斗失败事件
+    private SerializedProperty loseEventProp;
+    private SerializedProperty loseDialogueProp;
+    private SerializedProperty loseBranchProp;
 
     // 中途事件列表
     private SerializedProperty midEventsProp;
 
+    // 多角色分支
+    private SerializedProperty moreRoleBranchesProp;
+
     private void OnEnable()
     {
-        battleSceneNameProp = serializedObject.FindProperty("battleSceneName");
         enemiesProp = serializedObject.FindProperty("enemies");
 
         startEventProp = serializedObject.FindProperty("startEvent");
         startDialogueProp = serializedObject.FindProperty("startDialogue");
+        startBranchProp = serializedObject.FindProperty("startBranch");
 
-        endEventProp = serializedObject.FindProperty("endEvent");
-        endDialogueProp = serializedObject.FindProperty("endDialogue");
-        endBranchProp = serializedObject.FindProperty("endBranch");
+        winEventProp = serializedObject.FindProperty("winEvent");
+        winDialogueProp = serializedObject.FindProperty("winDialogue");
+        winBranchProp = serializedObject.FindProperty("winBranch");
+
+        loseEventProp = serializedObject.FindProperty("loseEvent");
+        loseDialogueProp = serializedObject.FindProperty("loseDialogue");
+        loseBranchProp = serializedObject.FindProperty("loseBranch");
 
         midEventsProp = serializedObject.FindProperty("midEvents");
+        moreRoleBranchesProp = serializedObject.FindProperty("moreRoleBranches");
     }
 
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
 
-        // ── 战斗场景 ──
-        EditorGUILayout.PropertyField(battleSceneNameProp, new GUIContent("Battle Scene Name"));
+        // ── 敌人列表 ──
+        EditorGUILayout.PropertyField(enemiesProp, new GUIContent("Enemies"), true);
 
         EditorGUILayout.Space();
 
-        // ── 敌人列表 ──
-        EditorGUILayout.PropertyField(enemiesProp, new GUIContent("Enemies"), true);
+        // ── 多角色分支 ──
+        EditorGUILayout.PropertyField(moreRoleBranchesProp, new GUIContent("More Role Branches"), true);
 
         EditorGUILayout.Space();
 
@@ -57,8 +70,13 @@ public class BattleSettingEditor : Editor
 
         EditorGUILayout.Space();
 
-        // ── 结束事件 ──
-        DrawEndEvent();
+        // ── 战斗胜利事件 ──
+        DrawEndEvent("战斗胜利事件", winEventProp, winDialogueProp, winBranchProp);
+
+        EditorGUILayout.Space();
+
+        // ── 战斗失败事件 ──
+        DrawEndEvent("战斗失败事件", loseEventProp, loseDialogueProp, loseBranchProp);
 
         EditorGUILayout.Space();
 
@@ -77,6 +95,7 @@ public class BattleSettingEditor : Editor
         {
             var newStartEvent = (EBattleStartEvent)startEventProp.enumValueIndex;
             if (newStartEvent != EBattleStartEvent.PlayDialogue) startDialogueProp.objectReferenceValue = null;
+            if (newStartEvent != EBattleStartEvent.StartBranch) startBranchProp.objectReferenceValue = null;
         }
 
         var startEvent = (EBattleStartEvent)startEventProp.enumValueIndex;
@@ -86,33 +105,37 @@ public class BattleSettingEditor : Editor
                 EditorGUILayout.PropertyField(startDialogueProp, new GUIContent("Start Dialogue"));
                 break;
 
+            case EBattleStartEvent.StartBranch:
+                EditorGUILayout.PropertyField(startBranchProp, new GUIContent("Start Branch"));
+                break;
+
             case EBattleStartEvent.None:
                 EditorGUILayout.HelpBox("不需要额外配置，战斗将直接开始。", MessageType.Info);
                 break;
         }
     }
 
-    private void DrawEndEvent()
+    private void DrawEndEvent(string label, SerializedProperty eventProp, SerializedProperty dialogueProp, SerializedProperty branchProp)
     {
-        EditorGUILayout.LabelField("End Event", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
         EditorGUI.BeginChangeCheck();
-        EditorGUILayout.PropertyField(endEventProp, new GUIContent("End Event"));
+        EditorGUILayout.PropertyField(eventProp, new GUIContent(label));
         if (EditorGUI.EndChangeCheck())
         {
-            var newEndEvent = (EBattleEndEvent)endEventProp.enumValueIndex;
-            if (newEndEvent != EBattleEndEvent.NextDialogue) endDialogueProp.objectReferenceValue = null;
-            if (newEndEvent != EBattleEndEvent.StartBranch) endBranchProp.objectReferenceValue = null;
+            var newEndEvent = (EBattleEndEvent)eventProp.enumValueIndex;
+            if (newEndEvent != EBattleEndEvent.NextDialogue) dialogueProp.objectReferenceValue = null;
+            if (newEndEvent != EBattleEndEvent.StartBranch) branchProp.objectReferenceValue = null;
         }
 
-        var endEvent = (EBattleEndEvent)endEventProp.enumValueIndex;
+        var endEvent = (EBattleEndEvent)eventProp.enumValueIndex;
         switch (endEvent)
         {
             case EBattleEndEvent.NextDialogue:
-                EditorGUILayout.PropertyField(endDialogueProp, new GUIContent("End Dialogue"));
+                EditorGUILayout.PropertyField(dialogueProp, new GUIContent("Dialogue"));
                 break;
 
             case EBattleEndEvent.StartBranch:
-                EditorGUILayout.PropertyField(endBranchProp, new GUIContent("End Branch"));
+                EditorGUILayout.PropertyField(branchProp, new GUIContent("Branch"));
                 break;
 
             case EBattleEndEvent.None:
@@ -174,7 +197,7 @@ public class BattleSettingEditor : Editor
         var triggerType = (EMidEventTriggerType)triggerTypeProp.enumValueIndex;
         var action = (EMidEventAction)actionProp.enumValueIndex;
         string summary = GetMidEventSummary(triggerType, action,
-            triggerType == EMidEventTriggerType.TurnCount ? turnCountProp.intValue : hpPercentageProp.intValue,
+            triggerType == EMidEventTriggerType.RoundCount ? turnCountProp.intValue : hpPercentageProp.intValue,
             targetIndexProp.intValue, index);
 
         EditorGUILayout.BeginVertical(EditorStyles.helpBox);
@@ -208,7 +231,7 @@ public class BattleSettingEditor : Editor
                 EditorGUILayout.HelpBox($"当敌人[{targetIndexProp.intValue}]的血量 ≤ {hpPercentageProp.intValue}% 时触发", MessageType.None);
                 break;
 
-            case EMidEventTriggerType.TurnCount:
+            case EMidEventTriggerType.RoundCount:
                 EditorGUILayout.PropertyField(turnCountProp, new GUIContent("回合数"));
                 EditorGUILayout.HelpBox($"到达第 {turnCountProp.intValue} 回合时触发", MessageType.None);
                 break;
@@ -249,7 +272,7 @@ public class BattleSettingEditor : Editor
         {
             EMidEventTriggerType.CharacterHpThreshold => $"角色[{targetIndex}] HP ≤ {value}%",
             EMidEventTriggerType.EnemyHpThreshold => $"敌人[{targetIndex}] HP ≤ {value}%",
-            EMidEventTriggerType.TurnCount => $"第 {value} 回合",
+            EMidEventTriggerType.RoundCount => $"第 {value} 回合",
             _ => "未知",
         };
 

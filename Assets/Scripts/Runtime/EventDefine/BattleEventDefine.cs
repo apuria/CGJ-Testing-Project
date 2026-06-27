@@ -31,5 +31,32 @@ public class BattleEventDefine : MonoBehaviour
         }
     }
 
+    public class EnemyHpChange : IEventMessage
+    {
+        public int idx;
+        public int hurtValue;
+        public static void SendEventMessage(int idx, int hurtValue)
+        {
+            var msg = new EnemyHpChange();
+            msg.idx = idx;
+            msg.hurtValue = hurtValue;
+            UniEvent.SendMessage(msg);
+        }
+    }
 
+    public class RoleHpChange : IEventMessage
+    {
+        public int idx;
+        public int hurtValue;
+        public static void SendEventMessage(int idx, int hurtValue)
+        {
+            var msg = new RoleHpChange();
+            msg.idx = idx;
+            msg.hurtValue = hurtValue;
+            UniEvent.SendMessage(msg);
+        }
+    }
+
+
+    
 }

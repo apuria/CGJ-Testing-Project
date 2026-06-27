@@ -5,7 +5,7 @@ using UniFramework.Machine;
 using UnityEngine.UI;
 
 [CreateAssetMenu(fileName = "New Dialogue", menuName = "Dialogue/New Dialogue", order = 0)]
-public class DialogueSettings : ScriptableObject, IStateData
+public class DialogueSetting : ScriptableObject, IStateData
 {
     public bool hasBackground = false;
     public Image BackGround;

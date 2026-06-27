@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Dialogue 的自定义 PropertyDrawer：
-/// 根据 onEnd 的选择，只显示对应的 Setting 字段（Battle 或 Branch）。
+/// 根据 onEnd 的选择，只显示对应的 Setting 字段（Battle、Branch 或 NextLog）。
 /// </summary>
 [CustomPropertyDrawer(typeof(Dialogue))]
 public class DialogueDrawer : PropertyDrawer
@@ -22,6 +22,7 @@ public class DialogueDrawer : PropertyDrawer
         var onEndProp = property.FindPropertyRelative("onEnd");
         var battleProp = property.FindPropertyRelative("Battle");
         var branchProp = property.FindPropertyRelative("BranchDialogue");
+        var nextLogProp = property.FindPropertyRelative("NextLog");
 
         float y = position.y;
         float x = position.x;
@@ -58,6 +59,7 @@ public class DialogueDrawer : PropertyDrawer
             var newOnEnd = (EOnEnd)onEndProp.enumValueIndex;
             if (newOnEnd != EOnEnd.StartBattle) battleProp.objectReferenceValue = null;
             if (newOnEnd != EOnEnd.StartBranch) branchProp.objectReferenceValue = null;
+            if (newOnEnd != EOnEnd.NextLog) nextLogProp.objectReferenceValue = null;
         }
         y += LineHeight + Padding;
 
@@ -72,6 +74,11 @@ public class DialogueDrawer : PropertyDrawer
         {
             Rect r6 = new Rect(x, y, w, LineHeight);
             EditorGUI.PropertyField(r6, branchProp, new GUIContent("Branch Dialogue"));
+        }
+        else if (onEnd == EOnEnd.NextLog)
+        {
+            Rect r6 = new Rect(x, y, w, LineHeight);
+            EditorGUI.PropertyField(r6, nextLogProp, new GUIContent("Next Log"));
         }
 
         EditorGUI.EndProperty();
@@ -88,8 +95,8 @@ public class DialogueDrawer : PropertyDrawer
         // 5 行固定 + TextArea 自适应 + 行间距
         float baseHeight = LineHeight * 4 + textH + Padding * 5;
 
-        // Battle 或 Branch 时多一行
-        if (onEnd == EOnEnd.StartBattle || onEnd == EOnEnd.StartBranch)
+        // Battle、Branch 或 NextLog 时多一行
+        if (onEnd == EOnEnd.StartBattle || onEnd == EOnEnd.StartBranch || onEnd == EOnEnd.NextLog)
         {
             baseHeight += LineHeight + Padding;
         }

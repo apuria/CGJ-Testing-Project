@@ -16,7 +16,7 @@ public class BranchSetting : ScriptableObject, IStateData
     public EOnEnd onEnd;
 
     [Tooltip("结束后的下一个对话（onEnd = NextDialogue 时使用）")]
-    public DialogueSettings nextDialogue;
+    public DialogueSetting nextDialogue;
 
     [Tooltip("结束后开启的战斗配置（onEnd = StartBattle 时使用）")]
     public BattleSetting battleSetting;

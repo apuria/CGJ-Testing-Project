@@ -36,7 +36,7 @@ public class BaseState : IStateNode
 
     }
 
-    public virtual void OnHandleEventMessage()
+    public virtual void OnHandleEventMessage(IEventMessage message)
     {
         
     }
