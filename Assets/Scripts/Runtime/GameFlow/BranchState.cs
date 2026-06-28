@@ -20,6 +20,7 @@ public class BranchState : BaseState
     {
         base.OnCreate(machine, data);
         branchSetting = data as BranchSetting;
+        UIMgr.Instance.ShowPanel<BranchPanel>(isSync: true);
     }
 
     public override void OnEnter()
@@ -34,7 +35,13 @@ public class BranchState : BaseState
 
     public override void OnUpdate()
     {
-        
+
+    }
+
+    public override void OnDispose()
+    {
+        UIMgr.Instance.HidePanel<BranchPanel>(true);
+        base.OnDispose();
     }
 
     public override void OnHandleEventMessage(IEventMessage message)

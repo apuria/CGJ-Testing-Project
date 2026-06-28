@@ -21,7 +21,7 @@ public class DialogueDrawer : PropertyDrawer
         var textProp = property.FindPropertyRelative("text");
         var onEndProp = property.FindPropertyRelative("onEnd");
         var battleProp = property.FindPropertyRelative("Battle");
-        var branchProp = property.FindPropertyRelative("BranchDialogue");
+        var branchProp = property.FindPropertyRelative("Branch");
         var nextLogProp = property.FindPropertyRelative("NextLog");
 
         float y = position.y;

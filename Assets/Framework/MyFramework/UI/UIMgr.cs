@@ -81,11 +81,11 @@ public class UIMgr : BaseManager<UIMgr>
         // 过场景不移除
         GameObject.DontDestroyOnLoad(uiCanvas.gameObject);
 
-        // 找到层级父对象
-        bottomLayer = uiCanvas.transform.Find("Bottom");
-        middleLayer = uiCanvas.transform.Find("Middle");
-        topLayer = uiCanvas.transform.Find("Top");
-        systemLayer = uiCanvas.transform.Find("System");
+        // 找到或创建层级父对象
+        bottomLayer = FindOrCreateLayer(uiCanvas.transform, "Bottom");
+        middleLayer = FindOrCreateLayer(uiCanvas.transform, "Middle");
+        topLayer = FindOrCreateLayer(uiCanvas.transform, "Top");
+        systemLayer = FindOrCreateLayer(uiCanvas.transform, "System");
 
         // 从场景中查找已有 EventSystem
         uiEventSystem = GameObject.FindObjectOfType<EventSystem>();
@@ -95,6 +95,21 @@ public class UIMgr : BaseManager<UIMgr>
             uiEventSystem = GameObject.Instantiate(ResourcesLoader.Instance.Load<GameObject>("UI/EventSystem")).GetComponent<EventSystem>();
         }
         GameObject.DontDestroyOnLoad(uiEventSystem.gameObject);
+    }
+
+    /// <summary>
+    /// 查找或创建层级子对象，确保 Bottom/Middle/Top/System 一定存在
+    /// </summary>
+    private Transform FindOrCreateLayer(Transform parent, string name)
+    {
+        var child = parent.Find(name);
+        if (child == null)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            child = go.transform;
+        }
+        return child;
     }
 
     /// <summary>

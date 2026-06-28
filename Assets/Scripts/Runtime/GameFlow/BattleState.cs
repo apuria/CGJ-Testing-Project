@@ -60,6 +60,7 @@ public class BattleState : BaseState
         base.OnCreate(machine, data);
         battleSetting = data as BattleSetting;
         battleMachine = new StateMachine();
+        UIMgr.Instance.ShowPanel<BattlePanel>(isSync: true);
     }
 
     public override void OnEnter()
@@ -86,6 +87,12 @@ public class BattleState : BaseState
     public override void OnUpdate()
     {
         battleMachine.Update();
+    }
+
+    public override void OnDispose()
+    {
+        UIMgr.Instance.HidePanel<BattlePanel>(true);
+        base.OnDispose();
     }
 
 #endregion

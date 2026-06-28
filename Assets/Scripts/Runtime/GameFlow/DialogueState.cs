@@ -18,6 +18,7 @@ public class DialogueState : BaseState
     {
         base.OnCreate(machine, data);
         nowDialogue = data as DialogueSetting;
+        UIMgr.Instance.ShowPanel<DialoguePanel>(isSync: true);
     }
 
     public override void OnEnter()
@@ -29,7 +30,7 @@ public class DialogueState : BaseState
         // 更新对话面板
         var dialogue = nowDialogue.dialogues[index];
         DiaLogueEventDefine.UpdateUI.SendEventMessage(dialogue.leftSpeakerIndex, dialogue.rightSpeakerIndex, dialogue.text, dialogue.talkingSpeaker);
-
+        
         eventGroup.AddListener<DiaLogueEventDefine.Next>(OnHandleEventMessage);
     }
 
@@ -40,7 +41,13 @@ public class DialogueState : BaseState
 
     public override void OnUpdate()
     {
-        
+
+    }
+
+    public override void OnDispose()
+    {
+        UIMgr.Instance.HidePanel<DialoguePanel>(true);
+        base.OnDispose();
     }
 
     public void Continue()

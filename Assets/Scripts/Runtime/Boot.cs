@@ -22,11 +22,10 @@ public class Boot : MonoBehaviour
         UniEvent.Initalize(); // 初始化事件系统（确保在 GameManager.Start 之前就绪）
     }
 
-    async UniTaskVoid Start()
+    void Start()
     {
         UniTween.Initalize(); // 初始化 Tween 动画系统
         UniLog.Initalize();   // 初始化文件日志系统
-        await UniTask.Yield();
         GameManager.Instance.Init(); // 初始化游戏管理器
     }
 }

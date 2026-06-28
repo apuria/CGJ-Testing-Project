@@ -29,6 +29,8 @@ public class DialoguePanel : BasePanel
     public Image background; // 背景图片
     public Image leftRole; // 左侧角色图片
     public Image rightRole; // 右侧角色图片
+    public Image leftRoleBg; // 左侧角色背景图片
+    public Image rightRoleBg; // 右侧角色背景图片
     public TextMeshProUGUI content;
     public TextMeshProUGUI leftRoleName;
     public TextMeshProUGUI rightRoleName;
@@ -48,6 +50,8 @@ public class DialoguePanel : BasePanel
     protected void Awake()
     {
         eventGroup = new();
+        eventGroup.AddListener<DiaLogueEventDefine.ShowUI>(OnHandleEventMessage);
+        eventGroup.AddListener<DiaLogueEventDefine.UpdateUI>(OnHandleEventMessage);
     }
 
     protected void Start()
@@ -58,8 +62,8 @@ public class DialoguePanel : BasePanel
             {
                 // 关闭对话面板
                 UIMgr.Instance.HidePanel<DialoguePanel>();
-                // 返回上一个界面
-                StateEventDefine.BackToPrevState.SendEventMessage();
+                // 返回地图
+                StateEventDefine.ChangeState.SendEventMessage<MapState>("MapState");
             }, "取消", null);
         });
 
@@ -139,7 +143,7 @@ public class DialoguePanel : BasePanel
             background.gameObject.SetActive(showUI.hasBackground);
             if (showUI.hasBackground)
             {
-                background = showUI.BackGround;
+                background.sprite = showUI.BackGround;
             }
         }
         else if(message is DiaLogueEventDefine.UpdateUI updateUI)
@@ -155,21 +159,47 @@ public class DialoguePanel : BasePanel
             currentFullText = updateUI.content;
 
             // 设置左侧角色
-            if(updateUI.leftRoleIndex >= 0)
+            if(updateUI.leftRoleIndex >= 0 && updateUI.leftRoleIndex < speakers.Count)
             {
-                leftRole.sprite = speakers[updateUI.leftRoleIndex].CharaArtwork.sprite;
-                leftRoleName.text = speakers[updateUI.leftRoleIndex].name;
+                var leftSpeaker = speakers[updateUI.leftRoleIndex];
+                bool hasArt = leftSpeaker?.CharaArtwork != null;
+                leftRoleBg.gameObject.SetActive(hasArt);
+                leftRole.gameObject.SetActive(hasArt);
+                leftRoleName.gameObject.SetActive(leftSpeaker != null);
+                if (hasArt)
+                    leftRole.sprite = leftSpeaker.CharaArtwork;
+                if (leftSpeaker != null)
+                    leftRoleName.text = leftSpeaker.name;
                 leftRole.color = updateUI.speaker == TalkingSpeaker.Left ? Color.white : Color.gray;
                 leftRoleName.color = updateUI.speaker == TalkingSpeaker.Left ? Color.white : Color.gray;
             }
+            else
+            {
+                leftRoleBg.gameObject.SetActive(false);
+                leftRole.gameObject.SetActive(false);
+                leftRoleName.gameObject.SetActive(false);
+            }
 
             // 设置右侧角色
-            if(updateUI.rightRoleIndex >= 0)
+            if(updateUI.rightRoleIndex >= 0 && updateUI.rightRoleIndex < speakers.Count)
             {
-                rightRole.sprite = speakers[updateUI.rightRoleIndex].CharaArtwork.sprite;
-                rightRoleName.text = speakers[updateUI.rightRoleIndex].name;
+                var rightSpeaker = speakers[updateUI.rightRoleIndex];
+                bool hasArt = rightSpeaker?.CharaArtwork != null;
+                rightRoleBg.gameObject.SetActive(hasArt);
+                rightRole.gameObject.SetActive(hasArt);
+                rightRoleName.gameObject.SetActive(rightSpeaker != null);
+                if (hasArt)
+                    rightRole.sprite = rightSpeaker.CharaArtwork;
+                if (rightSpeaker != null)
+                    rightRoleName.text = rightSpeaker.name;
                 rightRole.color = updateUI.speaker == TalkingSpeaker.Right ? Color.white : Color.gray;
                 rightRoleName.color = updateUI.speaker == TalkingSpeaker.Right ? Color.white : Color.gray;
+            }
+            else
+            {
+                rightRoleBg.gameObject.SetActive(false);
+                rightRole.gameObject.SetActive(false);
+                rightRoleName.gameObject.SetActive(false);
             }
 
             // 开始打字效果

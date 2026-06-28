@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UniFramework.Event;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class DiaLogueEventDefine
 {
@@ -10,8 +9,8 @@ public class DiaLogueEventDefine
     {
         public List<Speaker> speakers;
         public bool hasBackground;
-        public Image BackGround;
-        public static void SendEventMessage(List<Speaker> speakers, bool hasBackground = false, Image BackGround = null)
+        public Sprite BackGround;
+        public static void SendEventMessage(List<Speaker> speakers, bool hasBackground = false, Sprite BackGround = null)
         {
             var eventMessage = new ShowUI();
             eventMessage.speakers = speakers;

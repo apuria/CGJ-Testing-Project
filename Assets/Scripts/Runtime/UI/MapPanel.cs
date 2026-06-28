@@ -11,6 +11,7 @@ public class MapPanel : BasePanel
 1. 6个节点的图标
 2. 退出按钮
 3. 继续按钮
+4. 根据玩家所处节点设置玩家图标所在位置
 */
 
 #region 属性

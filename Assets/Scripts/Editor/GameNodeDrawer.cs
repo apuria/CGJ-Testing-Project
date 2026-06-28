@@ -118,11 +118,16 @@ public class GameNodeDrawer : PropertyDrawer
             // DialogueSettings 内联：对象引用行 + hasBackground 行 + 可能的 BackGround 行
             extraHeight = LineHeight + Padding; // 对象字段额外一行
             var dialogueObj = dialogueProp.objectReferenceValue;
-            var so = new SerializedObject(dialogueObj);
-            var hasBg = so.FindProperty("hasBackground");
-            if (hasBg != null && hasBg.boolValue)
+            if (dialogueObj != null)
             {
-                extraHeight += LineHeight + Padding; // BackGround 字段
+                using (var so = new SerializedObject(dialogueObj))
+                {
+                    var hasBg = so.FindProperty("hasBackground");
+                    if (hasBg != null && hasBg.boolValue)
+                    {
+                        extraHeight += LineHeight + Padding; // BackGround 字段
+                    }
+                }
             }
         }
 
@@ -153,35 +158,37 @@ public class GameNodeDrawer : PropertyDrawer
         }
 
         // 绘制 hasBackground 和 BackGround
-        var so = new SerializedObject(dialogueObj);
-        var hasBgProp = so.FindProperty("hasBackground");
-        if (hasBgProp == null)
-            return;
-
-        // 缩进以示层级
-        float indentX = x + 14f;
-        float indentW = w - 14f;
-
-        so.Update();
-
-        // hasBackground 勾选框
-        Rect hasBgRect = new Rect(indentX, y, indentW, LineHeight);
-        EditorGUI.PropertyField(hasBgRect, hasBgProp, new GUIContent("Has Background"));
-        y += LineHeight + Padding;
-
-        // 勾选后才显示 BackGround
-        if (hasBgProp.boolValue)
+        using (var so = new SerializedObject(dialogueObj))
         {
-            var bgProp = so.FindProperty("BackGround");
-            if (bgProp != null)
-            {
-                Rect bgRect = new Rect(indentX, y, indentW, LineHeight);
-                EditorGUI.PropertyField(bgRect, bgProp, new GUIContent("Background"));
-                y += LineHeight + Padding;
-            }
-        }
+            var hasBgProp = so.FindProperty("hasBackground");
+            if (hasBgProp == null)
+                return;
 
-        so.ApplyModifiedProperties();
+            // 缩进以示层级
+            float indentX = x + 14f;
+            float indentW = w - 14f;
+
+            so.Update();
+
+            // hasBackground 勾选框
+            Rect hasBgRect = new Rect(indentX, y, indentW, LineHeight);
+            EditorGUI.PropertyField(hasBgRect, hasBgProp, new GUIContent("Has Background"));
+            y += LineHeight + Padding;
+
+            // 勾选后才显示 BackGround
+            if (hasBgProp.boolValue)
+            {
+                var bgProp = so.FindProperty("BackGround");
+                if (bgProp != null)
+                {
+                    Rect bgRect = new Rect(indentX, y, indentW, LineHeight);
+                    EditorGUI.PropertyField(bgRect, bgProp, new GUIContent("Background"));
+                    y += LineHeight + Padding;
+                }
+            }
+
+            so.ApplyModifiedProperties();
+        }
     }
 
     /// <summary>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UniFramework.Machine;
 using UniFramework.Event;
+using System;
 
 public enum GameState
 {
@@ -27,7 +28,7 @@ public class GameManager : SingletonMono<GameManager>
     [SerializeField]
     public InGameData inGameData;
 
-
+    public LoadingTexts loadingTexts;
     public RoleInfo mainRole;
     public List<RoleInfo> roleList = new();
 
@@ -37,7 +38,15 @@ public class GameManager : SingletonMono<GameManager>
         base.Awake();
         stateMachine = new StateMachine();
         eventGroup = new EventGroup();
-        canvas = GameObject.Find("Canvas").GetComponent<Canvas>();
+        var canvasObj = GameObject.Find("Canvas");
+        if (canvasObj != null)
+        {
+            canvas = canvasObj.GetComponent<Canvas>();
+        }
+        else
+        {
+            Debug.LogWarning("GameManager.Awake: 场景中未找到名为 'Canvas' 的 GameObject，稍后将由 UIMgr 创建");
+        }
     }
 
     void Start()
@@ -65,9 +74,10 @@ public class GameManager : SingletonMono<GameManager>
     void Update()
     {
         stateMachine.Update();
+        ///
     }
 
-    void OnDistroy()
+    void OnDestroy()
     {
         eventGroup.RemoveAllListener();
     }
@@ -79,12 +89,15 @@ public class GameManager : SingletonMono<GameManager>
     {
         if (message is StateEventDefine.ChangeState changeState)
         {
-            stateMachine.SwitchTo(changeState.stateType, changeState.tag, changeState.data, changeState.destroy);
-            //TODO: 显示对应的UI
-            /*
-            如果为true，则销毁当前状态的UI
-            如果为false，则不销毁当前状态的UI
-            */
+            if (changeState.stateType == typeof(MapState) || changeState.stateType == typeof(BattleState))
+            {
+                // 到地图或战斗的切换先经过 LoadingState
+                SwitchToWithLoading(changeState.stateType, changeState.tag, changeState.data);
+            }
+            else
+            {
+                stateMachine.SwitchTo(changeState.stateType, changeState.tag, changeState.data, changeState.destroy);
+            }
         }
         else if (message is StateEventDefine.BackToPrevState backMsg)
         {
@@ -118,12 +131,12 @@ public class GameManager : SingletonMono<GameManager>
         else if (message is GameEventDefine.ContinueGame)
         {
             LoadPlayerData();
-            stateMachine.SwitchTo<MapState>("MapState");
+            SwitchToWithLoading(typeof(MapState), "MapState", null);
         }
         else if (message is GameEventDefine.NewGame)
         {
             StartANewGame();
-            stateMachine.SwitchTo<MapState>("MapState");
+            SwitchToWithLoading(typeof(MapState), "MapState", null);
         }
         else if (message is GameEventDefine.SaveProgress)
         {
@@ -202,7 +215,6 @@ public class GameManager : SingletonMono<GameManager>
     /// </summary>
     public void Init()
     {
-        UIMgr.Instance.ShowPanel<StartPanel>();
         stateMachine.SwitchTo<GameStart>("GameStart");
     }
 
@@ -272,17 +284,26 @@ public class GameManager : SingletonMono<GameManager>
     }
 
     /// <summary>
+    /// 通过 LoadingState 过渡到目标状态
+    /// </summary>
+    private void SwitchToWithLoading(Type targetType, string targetTag, IStateData targetData)
+    {
+        var loadingInfo = new LoadingInfo
+        {
+            targetStateType = targetType,
+            targetTag = targetTag,
+            targetData = targetData,
+        };
+        stateMachine.SwitchTo<LoadingState>("LoadingState", loadingInfo);
+    }
+
+    /// <summary>
     /// 开始战斗
     /// </summary>
     /// <param name="battleSetting"></param>
     public void StartBattle(BattleSetting battleSetting)
     {
-        stateMachine.SwitchTo<BattleState>("BattleState", battleSetting);
-        //TODO: 显示战斗界面
-        /*
-        如果为true，则销毁当前状态的UI
-        如果为false，则不销毁当前状态的UI
-        */
+        SwitchToWithLoading(typeof(BattleState), "BattleState", battleSetting);
     }
 
     /// <summary>
@@ -292,11 +313,6 @@ public class GameManager : SingletonMono<GameManager>
     public void StartDiaLogue(DialogueSetting dialogueSetting)
     {
         stateMachine.SwitchTo<DialogueState>("DialogueState", dialogueSetting);
-        //TODO: 显示对话界面
-        /*
-        如果为true，则销毁当前状态的UI
-        如果为false，则不销毁当前状态的UI
-        */
     }
 
     /// <summary>
@@ -306,11 +322,6 @@ public class GameManager : SingletonMono<GameManager>
     public void StartBranch(BranchSetting branchSetting)
     {
         stateMachine.SwitchTo<BranchState>("BranchState", branchSetting);
-        //TODO: 显示分支选项界面
-        /*
-        如果为true，则销毁当前状态的UI
-        如果为false，则不销毁当前状态的UI
-        */
     }
 
     /// <summary>
@@ -321,11 +332,6 @@ public class GameManager : SingletonMono<GameManager>
         SavePlayerData();
         playerData = null; // 清空玩家数据
         stateMachine.SwitchTo<GameStart>("GameStart");
-        //TODO: 返回主菜单, 显示主菜单界面
-        /*
-        如果为true，则销毁当前状态的UI
-        如果为false，则不销毁当前状态的UI
-        */
     }
 
     /// <summary>
@@ -333,11 +339,8 @@ public class GameManager : SingletonMono<GameManager>
     /// </summary>
     private void ShowTipPanel(TipPanelEventDefine.ShowTip showTip)
     {
-        UIMgr.Instance.ShowPanel<TipPanel>(E_UILayer.System, (panel) =>
+        UIMgr.Instance.ShowPanel<TipPanel>(E_UILayer.Top, (panel) =>
         {
-            // 直接挂到 Canvas 下，确保显示在最上层
-            panel.transform.SetParent(canvas.transform, false);
-            panel.transform.SetAsLastSibling();
             panel.Setup(showTip.tipText, showTip.leftButtonText, showTip.leftButtonAction, showTip.rightButtonText, showTip.rightButtonAction);
         });
     }

@@ -16,6 +16,7 @@ public class GameStart : BaseState
     public override void OnCreate(StateMachine machine, IStateData data)
     {
         base.OnCreate(machine, data);
+        UIMgr.Instance.ShowPanel<StartPanel>(isSync: true);
     }
 
     public override void OnEnter()
@@ -30,7 +31,13 @@ public class GameStart : BaseState
 
     public override void OnUpdate()
     {
-        
+
+    }
+
+    public override void OnDispose()
+    {
+        UIMgr.Instance.HidePanel<StartPanel>(true);
+        base.OnDispose();
     }
 
     public override void OnHandleEventMessage(IEventMessage message)

@@ -25,6 +25,11 @@ public class EnemyBattleState : BaseBattleState
 
     public override void OnUpdate()
     {
-        
+
     }
-}   
+
+    public override void OnDispose()
+    {
+        base.OnDispose();
+    }
+}
