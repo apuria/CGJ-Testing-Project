@@ -45,6 +45,10 @@ public enum EBattleEndEvent
     /// 回到地图
     /// </summary>
     GoBackToMap,
+    /// <summary>
+    /// 结束分支，回到地图界面，玩家数据进入下一个节点
+    /// </summary>
+    EndBranch,
 }
 
 /// <summary>

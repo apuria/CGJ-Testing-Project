@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 646abc57e6d6fe74a9252bafdf104fb7, type: 3}
   m_Name: New Branch
   m_EditorClassIdentifier: 
+  id: 
   branches: []
   onEnd: 0
   nextDialogue: {fileID: 0}

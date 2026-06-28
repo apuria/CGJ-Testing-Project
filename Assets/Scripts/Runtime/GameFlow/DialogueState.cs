@@ -22,7 +22,15 @@ public class DialogueState : BaseState
 
     public override void OnEnter()
     {
-        //TODO: 更新对话面板
+        // 重置对话索引
+        index = 0;
+        // 显示对话面板
+        DiaLogueEventDefine.ShowUI.SendEventMessage(nowDialogue.speakers, nowDialogue.hasBackground, nowDialogue.BackGround);
+        // 更新对话面板
+        var dialogue = nowDialogue.dialogues[index];
+        DiaLogueEventDefine.UpdateUI.SendEventMessage(dialogue.leftSpeakerIndex, dialogue.rightSpeakerIndex, dialogue.text, dialogue.talkingSpeaker);
+
+        eventGroup.AddListener<DiaLogueEventDefine.Next>(OnHandleEventMessage);
     }
 
     public override void OnExit()
@@ -60,6 +68,10 @@ public class DialogueState : BaseState
                 // 回到地图
                 GoBackToMap();
                 break;
+            case EOnEnd.EndBranch:
+                // 结束分支，回到地图界面，玩家数据进入下一个节点
+                EndBranch();
+                break;
         }
     }
 
@@ -73,7 +85,9 @@ public class DialogueState : BaseState
         else
         {
             index++;
-            //TODO: 更新对话面板
+            // 更新对话面板
+            var dialogue = nowDialogue.dialogues[index];
+            DiaLogueEventDefine.UpdateUI.SendEventMessage(dialogue.leftSpeakerIndex, dialogue.rightSpeakerIndex, dialogue.text, dialogue.talkingSpeaker);
         }
     }
 
@@ -101,8 +115,19 @@ public class DialogueState : BaseState
         StateEventDefine.ChangeState.SendEventMessage<MapState>("MapState");
     }
 
+    private void EndBranch()
+    {
+        // 结束当前一段剧情，玩家数据进入下一个节点，然后回到地图界面
+        //TODO: 调用UI显示剧情结束过渡效果
+        GameManager.Instance.NextNode();
+        GoBackToMap();
+    }
+
     public override void OnHandleEventMessage(IEventMessage message)
     {
-        
+        if(message is DiaLogueEventDefine.Next)
+        {
+            Continue();
+        }
     }
 }

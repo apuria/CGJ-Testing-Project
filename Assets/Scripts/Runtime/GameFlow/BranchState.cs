@@ -70,6 +70,10 @@ public class BranchState : BaseState
                 // 回到地图
                 GoBackToMap();
                 break;
+            case EOnEnd.EndBranch:
+                // 结束分支，回到地图界面，玩家数据进入下一个节点
+                EndBranch();
+                break;
         }
     }
 
@@ -101,5 +105,13 @@ public class BranchState : BaseState
     {
         // 使用状态机切换到地图状态
         StateEventDefine.ChangeState.SendEventMessage<MapState>("MapState");
+    }
+
+    private void EndBranch()
+    {
+        // 结束当前一段剧情，玩家数据进入下一个节点，然后回到地图界面
+        //TODO: 调用UI显示剧情结束过渡效果
+        GameManager.Instance.NextNode();
+        GoBackToMap();
     }
 }

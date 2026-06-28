@@ -24,7 +24,11 @@ public enum EOnEnd
     /// <summary>
     /// 回到地图
     /// </summary>
-    GoBackToMap, 
+    GoBackToMap,
+    /// <summary>
+    /// 结束分支，回到地图界面，玩家数据进入下一个节点
+    /// </summary>
+    EndBranch,
     /// <summary>
     /// 下一个对话
     /// </summary>

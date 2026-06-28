@@ -15,18 +15,19 @@ public class GameManager : SingletonMono<GameManager>
 {
 //TODO: 游戏管理器
 /*
-1. 
-2. 
+1.
+2.
 */
+    public Canvas canvas;
     private StateMachine stateMachine;
     private EventGroup eventGroup;
-    private PlayerData playerData; 
+    private PlayerData playerData;
 
     public PlayerData PlayerData => playerData;
     [SerializeField]
     public InGameData inGameData;
 
-    
+
     public RoleInfo mainRole;
     public List<RoleInfo> roleList = new();
 
@@ -36,6 +37,7 @@ public class GameManager : SingletonMono<GameManager>
         base.Awake();
         stateMachine = new StateMachine();
         eventGroup = new EventGroup();
+        canvas = GameObject.Find("Canvas").GetComponent<Canvas>();
     }
 
     void Start()
@@ -55,6 +57,9 @@ public class GameManager : SingletonMono<GameManager>
         eventGroup.AddListener<GameEventDefine.SaveProgress>(OnHandleEventMessage);
         eventGroup.AddListener<GameEventDefine.ReturnToMainMenu>(OnHandleEventMessage);
         eventGroup.AddListener<GameEventDefine.QuitGame>(OnHandleEventMessage);
+
+        // 提示面板事件
+        eventGroup.AddListener<TipPanelEventDefine.ShowTip>(OnHandleEventMessage);
     }
 
     void Update()
@@ -75,6 +80,11 @@ public class GameManager : SingletonMono<GameManager>
         if (message is StateEventDefine.ChangeState changeState)
         {
             stateMachine.SwitchTo(changeState.stateType, changeState.tag, changeState.data, changeState.destroy);
+            //TODO: 显示对应的UI
+            /*
+            如果为true，则销毁当前状态的UI
+            如果为false，则不销毁当前状态的UI
+            */
         }
         else if (message is StateEventDefine.BackToPrevState backMsg)
         {
@@ -126,6 +136,10 @@ public class GameManager : SingletonMono<GameManager>
         else if (message is GameEventDefine.QuitGame)
         {
             QuitGameEvent();
+        }
+        else if (message is TipPanelEventDefine.ShowTip showTip)
+        {
+            ShowTipPanel(showTip);
         }
     }
 #endregion
@@ -182,6 +196,15 @@ public class GameManager : SingletonMono<GameManager>
 #endregion
 
 #region 游戏流程控制
+
+    /// <summary>
+    /// 游戏初始化：加载开始界面和开始状态
+    /// </summary>
+    public void Init()
+    {
+        UIMgr.Instance.ShowPanel<StartPanel>();
+        stateMachine.SwitchTo<GameStart>("GameStart");
+    }
 
     /// <summary>
     /// 跳转到下一个节点
@@ -255,6 +278,11 @@ public class GameManager : SingletonMono<GameManager>
     public void StartBattle(BattleSetting battleSetting)
     {
         stateMachine.SwitchTo<BattleState>("BattleState", battleSetting);
+        //TODO: 显示战斗界面
+        /*
+        如果为true，则销毁当前状态的UI
+        如果为false，则不销毁当前状态的UI
+        */
     }
 
     /// <summary>
@@ -264,6 +292,11 @@ public class GameManager : SingletonMono<GameManager>
     public void StartDiaLogue(DialogueSetting dialogueSetting)
     {
         stateMachine.SwitchTo<DialogueState>("DialogueState", dialogueSetting);
+        //TODO: 显示对话界面
+        /*
+        如果为true，则销毁当前状态的UI
+        如果为false，则不销毁当前状态的UI
+        */
     }
 
     /// <summary>
@@ -273,6 +306,11 @@ public class GameManager : SingletonMono<GameManager>
     public void StartBranch(BranchSetting branchSetting)
     {
         stateMachine.SwitchTo<BranchState>("BranchState", branchSetting);
+        //TODO: 显示分支选项界面
+        /*
+        如果为true，则销毁当前状态的UI
+        如果为false，则不销毁当前状态的UI
+        */
     }
 
     /// <summary>
@@ -283,6 +321,25 @@ public class GameManager : SingletonMono<GameManager>
         SavePlayerData();
         playerData = null; // 清空玩家数据
         stateMachine.SwitchTo<GameStart>("GameStart");
+        //TODO: 返回主菜单, 显示主菜单界面
+        /*
+        如果为true，则销毁当前状态的UI
+        如果为false，则不销毁当前状态的UI
+        */
+    }
+
+    /// <summary>
+    /// 显示提示面板
+    /// </summary>
+    private void ShowTipPanel(TipPanelEventDefine.ShowTip showTip)
+    {
+        UIMgr.Instance.ShowPanel<TipPanel>(E_UILayer.System, (panel) =>
+        {
+            // 直接挂到 Canvas 下，确保显示在最上层
+            panel.transform.SetParent(canvas.transform, false);
+            panel.transform.SetAsLastSibling();
+            panel.Setup(showTip.tipText, showTip.leftButtonText, showTip.leftButtonAction, showTip.rightButtonText, showTip.rightButtonAction);
+        });
     }
 
     /// <summary>
@@ -293,7 +350,6 @@ public class GameManager : SingletonMono<GameManager>
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-        SavePlayerData();
         Application.Quit();
 #endif
     }

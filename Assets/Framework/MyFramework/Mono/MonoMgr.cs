@@ -6,7 +6,7 @@ using UnityEngine.Events;
 /// <summary>
 /// 公共Mono模块管理器
 /// </summary>
-public class MonoMgr : SingletonAutoMono<MonoMgr>
+public class MonoMgr : SingletonMono<MonoMgr>
 {
     private event UnityAction updateEvent;
     private event UnityAction fixedUpdateEvent;

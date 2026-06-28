@@ -13,10 +13,14 @@ MonoBehaviour:
   m_Name: New Battle Setting
   m_EditorClassIdentifier: 
   enemies: []
+  moreRoleBranches: []
   startEvent: 0
   startDialogue: {fileID: 0}
   startBranch: {fileID: 0}
-  endEvent: 0
-  endDialogue: {fileID: 0}
-  endBranch: {fileID: 0}
+  winEvent: 0
+  winDialogue: {fileID: 0}
+  winBranch: {fileID: 0}
+  loseEvent: 0
+  loseDialogue: {fileID: 0}
+  loseBranch: {fileID: 0}
   midEvents: []

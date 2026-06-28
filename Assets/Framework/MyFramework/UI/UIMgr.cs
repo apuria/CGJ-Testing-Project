@@ -31,7 +31,7 @@ public enum E_UILayer
 /// 管理所有UI面板的管理器
 /// 注意：面板预设体名要和面板类名一致！！！！！
 /// </summary>
-public class UIMgr : SingletonMono<UIMgr>
+public class UIMgr : BaseManager<UIMgr>
 {
     /// <summary>
     /// 主要用于里式替换原则 在字典中 用父类容器装载子类对象
@@ -41,7 +41,7 @@ public class UIMgr : SingletonMono<UIMgr>
     /// <summary>
     /// 用于存储面板信息 和加载完成的回调函数的
     /// </summary>
-    /// <typeparam name="T">面板的类型</typeparam>
+    /// <typeparam name="T">面板类型</typeparam>
     private class PanelInfo<T> : BasePanelInfo where T:BasePanel
     {
         public T panel;
@@ -55,7 +55,6 @@ public class UIMgr : SingletonMono<UIMgr>
     }
 
 
-    private Camera uiCamera;
     private Canvas uiCanvas;
     private EventSystem uiEventSystem;
 
@@ -72,26 +71,29 @@ public class UIMgr : SingletonMono<UIMgr>
 
     private UIMgr()
     {
-        //动态创建唯一的Canvas和EventSystem（摄像机）
-        uiCamera = GameObject.Instantiate(ResourcesLoader.Instance.Load<GameObject>("UI/UICamera")).GetComponent<Camera>();
-        //ui摄像机过场景不移除 专门用来渲染UI面板
-        GameObject.DontDestroyOnLoad(uiCamera.gameObject);
-
-        //动态创建Canvas
-        uiCanvas = GameObject.Instantiate(ResourcesLoader.Instance.Load<GameObject>("UI/Canvas")).GetComponent<Canvas>();
-        //设置使用的UI摄像机
-        uiCanvas.worldCamera = uiCamera;
-        //过场景不移除
+        // 从场景中查找已有 Canvas
+        uiCanvas = GameObject.Find("Canvas")?.GetComponent<Canvas>();
+        if (uiCanvas == null)
+        {
+            // 场景中无 Canvas，从 Resources 创建
+            uiCanvas = GameObject.Instantiate(ResourcesLoader.Instance.Load<GameObject>("UI/Canvas")).GetComponent<Canvas>();
+        }
+        // 过场景不移除
         GameObject.DontDestroyOnLoad(uiCanvas.gameObject);
 
-        //找到层级父对象
+        // 找到层级父对象
         bottomLayer = uiCanvas.transform.Find("Bottom");
         middleLayer = uiCanvas.transform.Find("Middle");
         topLayer = uiCanvas.transform.Find("Top");
         systemLayer = uiCanvas.transform.Find("System");
 
-        //动态创建EventSystem
-        uiEventSystem = GameObject.Instantiate(ResourcesLoader.Instance.Load<GameObject>("UI/EventSystem")).GetComponent<EventSystem>();
+        // 从场景中查找已有 EventSystem
+        uiEventSystem = GameObject.FindObjectOfType<EventSystem>();
+        if (uiEventSystem == null)
+        {
+            // 场景中无 EventSystem，从 Resources 创建
+            uiEventSystem = GameObject.Instantiate(ResourcesLoader.Instance.Load<GameObject>("UI/EventSystem")).GetComponent<EventSystem>();
+        }
         GameObject.DontDestroyOnLoad(uiEventSystem.gameObject);
     }
 
@@ -136,12 +138,22 @@ public class UIMgr : SingletonMono<UIMgr>
             //正在异步加载中
             if(panelInfo.panel == null)
             {
-                //如果之前显示了又隐藏 现在又想显示 那么直接设为false
-                panelInfo.isHide = false;
+                //面板已被销毁且无异步加载回调，从字典移除，重新创建
+                if(panelInfo.callBack == null)
+                {
+                    panelDic.Remove(panelName);
+                }
+                else
+                {
+                    //如果之前显示了又隐藏 现在又想显示 那么直接设为false
+                    panelInfo.isHide = false;
 
-                //如果正在异步加载 应该等待它加载完毕 只需要记录回调函数 加载完后去调用即可
-                if (callBack != null)
-                    panelInfo.callBack += callBack;
+                    //如果正在异步加载 应该等待它加载完毕 只需要记录回调函数 加载完后去调用即可
+                    if (callBack != null)
+                        panelInfo.callBack += callBack;
+
+                    return;
+                }
             }
             else//已经加载结束
             {
@@ -153,8 +165,8 @@ public class UIMgr : SingletonMono<UIMgr>
                 panelInfo.panel.ShowMe();
                 //如果存在回调 直接返回出去即可
                 callBack?.Invoke(panelInfo.panel);
+                return;
             }
-            return;
         }
 
         //不存在面板 先存入字典当中 占个位置 之后如果又显示 我才能得到字典中的信息进行判断
