@@ -20,12 +20,3 @@ public struct EnemyBattleInfo : IStateData
         this.enemyInfo = enemyInfo;
     }
 }
-
-public struct DiceBattleInfo : IStateData
-{
-    int diceNum;
-    public DiceBattleInfo(int diceNum)
-    {
-        this.diceNum = diceNum;
-    }
-}

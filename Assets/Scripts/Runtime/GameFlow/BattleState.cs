@@ -46,13 +46,13 @@ public class BattleState : BaseState
     /// <summary>
     /// 角色列表
     /// </summary>
-    public List<RoleInfo> roleList;
-    public int liveRoleCount => roleList.FindAll(r => r.hp > 0).Count;
+    public List<RoleInfo> roleList = new();
+    public int liveRoleCount => roleList.FindAll(r => r.hp.value > 0).Count;
     /// <summary>
     /// 敌人列表
     /// </summary>
-    public List<EnemyInfo> enemyList;
-    public int liveEnemyCount => enemyList.FindAll(e => e.hp > 0).Count;
+    public List<EnemyInfo> enemyList = new();
+    public int liveEnemyCount => enemyList.FindAll(e => e.hp.value > 0).Count;
 
 #region 生命周期
     public override void OnCreate(StateMachine machine, IStateData data)
@@ -212,19 +212,19 @@ public class BattleState : BaseState
         roundList.Clear();
         foreach (var role in roleList)
         {
-            if(role.hp > 0)
+            if(role.hp.value > 0)
                 roundList.Add(role);
         }
         foreach (var enemy in enemyList)
         {
-            if(enemy.hp > 0)
+            if(enemy.hp.value > 0)
             {
                 roundList.Add(enemy);
             }
         }
 
         // 按speed从大到小排序
-        roundList.Sort((a, b) => b.speed.CompareTo(a.speed));
+        roundList.Sort((a, b) => b.speed.value.CompareTo(a.speed.value));
         // 将排序后的元素加入回合队列
         foreach (var info in roundList)
         {
@@ -269,26 +269,37 @@ public class BattleState : BaseState
         2. 如果满足，调用MidEvent()
         */
 
+        if (battleSetting == null || battleSetting.midEvents == null) return;
+
         foreach (var midEvent in battleSetting.midEvents)
         {
+            if (midEvent == null) continue;
+
             switch(midEvent.triggerType)
             {
                 case EMidEventTriggerType.CharacterHpThreshold:
-                    // 检查角色血量是否达到阈值
-                    if (roleList[midEvent.targetIndex].hp <= roleList[midEvent.targetIndex].maxHp * midEvent.hpPercentage * 0.01f)
+                {
+                    if (midEvent.targetIndex < 0 || midEvent.targetIndex >= roleList.Count) continue;
+                    var role = roleList[midEvent.targetIndex];
+                    if (role == null || role.hp == null || role.maxHp == null) continue;
+                    if (role.hp.value <= role.maxHp.value * midEvent.hpPercentage * 0.01f)
                     {
                         MidEvent(midEvent);
                     }
                     break;
+                }
                 case EMidEventTriggerType.EnemyHpThreshold:
-                    // 检查敌人血量是否达到阈值
-                    if (enemyList[midEvent.targetIndex].hp <= enemyList[midEvent.targetIndex].maxHp * midEvent.hpPercentage * 0.01f)
+                {
+                    if (midEvent.targetIndex < 0 || midEvent.targetIndex >= enemyList.Count) continue;
+                    var enemy = enemyList[midEvent.targetIndex];
+                    if (enemy == null || enemy.hp == null || enemy.maxHp == null) continue;
+                    if (enemy.hp.value <= enemy.maxHp.value * midEvent.hpPercentage * 0.01f)
                     {
                         MidEvent(midEvent);
                     }
                     break;
+                }
                 case EMidEventTriggerType.RoundCount:
-                    // 检查回合数是否达到阈值
                     if(round == midEvent.roundCount)
                     {
                         MidEvent(midEvent);

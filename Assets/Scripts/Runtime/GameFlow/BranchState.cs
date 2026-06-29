@@ -25,6 +25,9 @@ public class BranchState : BaseState
 
     public override void OnEnter()
     {
+        // 向 BranchPanel 发送分支列表
+        BranchEventDefine.ShowUI.SendEventMessage(branchSetting.branches);
+
         eventGroup.AddListener<BranchEventDefine.ChooseBranch>(OnHandleEventMessage);
     }
 
@@ -48,7 +51,12 @@ public class BranchState : BaseState
     {
         if(message is BranchEventDefine.ChooseBranch chooseBranch)
         {
+            // 边界检查
+            if (chooseBranch.branchId < 0 || chooseBranch.branchId >= branchSetting.branches.Count) return;
+            // 记录玩家的分支选择
             GameManager.Instance.AddBranchChoose(branchSetting.id, branchSetting.branches[chooseBranch.branchId].chosen);
+            // 继续后续流程
+            Continue();
         }
     }
 
