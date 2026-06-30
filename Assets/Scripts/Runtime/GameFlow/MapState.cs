@@ -21,15 +21,30 @@ public class MapState : BaseState
     {
         
         playerData = GameManager.Instance.PlayerData;    
+        var gm = GameManager.Instance;
         switch(playerData.NowFlow)
         {
             case PlayerData.Flow.Start:
-                //发送消息，跳转开始事件
-                SceneEventDefine.StartGame.SendEventMessage();
+                if (gm.HasStartEvent)
+                {
+                    SceneEventDefine.StartGame.SendEventMessage();
+                }
+                else
+                {
+                    // 没有开始事件，直接跳到下一个节点，避免卡住
+                    gm.NextNode();
+                }
                 break;
             case PlayerData.Flow.End:
-                //发送消息，跳转结束事件
-                SceneEventDefine.EndGame.SendEventMessage();
+                if (gm.HasEndEvent)
+                {
+                    SceneEventDefine.EndGame.SendEventMessage();
+                }
+                else
+                {
+                    // 没有结束事件，直接跳到下一个
+                    gm.NextNode();
+                }
                 break;
             default:
                 //TODO：更新地图UI

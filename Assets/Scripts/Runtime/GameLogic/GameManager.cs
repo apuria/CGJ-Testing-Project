@@ -183,6 +183,22 @@ public class GameManager : SingletonMono<GameManager>
 
     [Header("游戏流程事件")]
     [SerializeField]
+    [Tooltip("是否启用开始游戏事件")]
+    private bool hasStartEvent = true;
+    [SerializeField]
+    [Tooltip("是否启用结束游戏事件")]
+    private bool hasEndEvent = true;
+
+    /// <summary>
+    /// 是否启用了开始游戏事件（供 MapState 查询）
+    /// </summary>
+    public bool HasStartEvent => hasStartEvent;
+    /// <summary>
+    /// 是否启用了结束游戏事件（供 MapState 查询）
+    /// </summary>
+    public bool HasEndEvent => hasEndEvent;
+
+    [SerializeField]
     [Tooltip("开始游戏事件节点，游戏启动时触发")]
     public GameNode StartNode;
     [SerializeField]

@@ -56,12 +56,14 @@ public class UIMgr : BaseManager<UIMgr>
 
 
     private Canvas uiCanvas;
+    public Canvas UICanvas => uiCanvas;
     private EventSystem uiEventSystem;
 
     //层级父对象
     private Transform bottomLayer;
     private Transform middleLayer;
-    private Transform topLayer;
+    public Transform topLayer;
+    public Transform TopLayer => topLayer;
     private Transform systemLayer;
 
     /// <summary>
@@ -341,4 +343,5 @@ public class UIMgr : BaseManager<UIMgr>
 
         trigger.triggers.Add(entry);
     }
+
 }
