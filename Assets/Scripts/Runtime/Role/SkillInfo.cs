@@ -10,6 +10,7 @@ public class SkillInfo : ScriptableObject
     [TextArea(3, 10)]
     public string skillDescription;
     public int Damage;
+    public int mpCost;
     public bool isAOE;
 
     public bool hasBuff;
@@ -21,4 +22,27 @@ public class SkillInfo : ScriptableObject
     */
     public GameObject attackEffect;
     public GameObject hitEffect;
+
+    private const float MinEffectWaitTime = 1.5f;
+
+    /// <summary>
+    /// 获取技能特效的最大播放时间，若无法获取则返回最低 1.2s
+    /// </summary>
+    public static float GetEffectTime(SkillInfo skill)
+    {
+        if (skill == null) return MinEffectWaitTime;
+
+        float maxTime = 0f;
+        if (skill.attackEffect != null)
+        {
+            var ps = skill.attackEffect.GetComponent<ParticleSystem>();
+            if (ps != null) maxTime = Mathf.Max(maxTime, ps.main.duration);
+        }
+        if (skill.hitEffect != null)
+        {
+            var ps = skill.hitEffect.GetComponent<ParticleSystem>();
+            if (ps != null) maxTime = Mathf.Max(maxTime, ps.main.duration);
+        }
+        return maxTime > 0f ? maxTime : MinEffectWaitTime;
+    }
 }

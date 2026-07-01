@@ -10,5 +10,6 @@ public class RoleSlot : MonoBehaviour
     {
         controller.transform.localScale = new Vector3(scale, scale, scale);
         this.icon.sprite = icon;
+        this.icon.color = Color.white;
     }
 }

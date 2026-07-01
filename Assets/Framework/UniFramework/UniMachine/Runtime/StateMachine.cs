@@ -23,9 +23,10 @@ namespace UniFramework.Machine
         private string _curNodeTag;
 
         /// <summary>
-        /// 上一个节点的 Tag（用于追踪）
+        /// 导航栈：记录状态切换路径，支持多层 BackToPrevState
+        /// 栈顶为最近一次 forward 切换前所在的节点 Tag
         /// </summary>
-        private string _preNodeTag;
+        private readonly Stack<string> _navStack = new();
 
         /// <summary>
         /// 当前运行的节点 Tag
@@ -33,9 +34,9 @@ namespace UniFramework.Machine
         public string CurrentNodeTag => _curNodeTag ?? string.Empty;
 
         /// <summary>
-        /// 之前运行的节点 Tag
+        /// 之前运行的节点 Tag（导航栈顶，用于 BackToPrevState）
         /// </summary>
-        public string PreviousNodeTag => _preNodeTag ?? string.Empty;
+        public string PreviousNodeTag => _navStack.Count > 0 ? _navStack.Peek() : string.Empty;
 
         public StateMachine() { }
 
@@ -86,7 +87,7 @@ namespace UniFramework.Machine
 
             _curNode = node;
             _curNodeTag = tag;
-            _preNodeTag = null;
+            _navStack.Clear();
 
             UniLogger.Log($"Start state machine: {tag}");
             _curNode.OnEnter();
@@ -143,7 +144,8 @@ namespace UniFramework.Machine
                 _curNode.OnDispose();
             }
 
-            _preNodeTag = _curNodeTag;
+            // 将当前节点 Tag 推入导航栈，供后续 BackToPrevState 回溯
+            _navStack.Push(_curNodeTag);
             _curNode = node;
             _curNodeTag = tag;
 
@@ -170,7 +172,7 @@ namespace UniFramework.Machine
             {
                 // 没有当前节点，直接恢复
                 _suspendedNodes.Remove(tag);
-                _preNodeTag = null;
+                _navStack.Clear();
                 _curNode = targetNode;
                 _curNodeTag = tag;
 
@@ -197,7 +199,11 @@ namespace UniFramework.Machine
                 _curNode.OnDispose();
             }
 
-            _preNodeTag = _curNodeTag;
+            // 从导航栈弹出目标 Tag（返回路径），不推入当前节点
+            if (_navStack.Count > 0 && _navStack.Peek() == tag)
+            {
+                _navStack.Pop();
+            }
             _curNode = targetNode;
             _curNodeTag = tag;
 

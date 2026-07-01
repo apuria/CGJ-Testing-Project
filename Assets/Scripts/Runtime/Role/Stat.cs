@@ -1,8 +1,11 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 
-public class Stat
+/// <summary>
+/// 可序列化的数值结构体，用于 HP/MP/ATK/DEF/SPD 等属性
+/// </summary>
+[Serializable]
+public struct Stat
 {
     public float value;
 }

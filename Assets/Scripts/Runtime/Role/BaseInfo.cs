@@ -20,17 +20,27 @@ public class BaseInfo : ScriptableObject
     public Stat hp;
     public Stat maxMp;
     public Stat mp;
-    public Stat attack;
     public Stat defense;
     public Stat speed;
     public List<SkillInfo> skills;
     public SkillInfo ultimateSkill;
     public SkillInfo normalAttack;
     
+    /// <summary>
+    /// 防御时获得的护盾值
+    /// </summary>
+    public Stat shieldValue;
+
+    /// <summary>
+    /// 临时防御值（当前回合有效，回合结束时清零）
+    /// </summary>
+    [System.NonSerialized]
+    public float tempDefense;
+
     public GameObject attackEffect;
     public GameObject hitEffect;
 
-    private Dictionary<BuffInfo, int> buffs;
+    private Dictionary<BuffInfo, int> buffs = new();
 
     public void AddBuff(BuffInfo buff)
     {
@@ -74,7 +84,7 @@ public class BaseInfo : ScriptableObject
                     mp.value = maxMp.value;
                 break;
             case BuffType.ATK:
-                attack.value += value;
+                // 普通攻击已被 SkillInfo 替代，ATK Buff 不再生效
                 break;
             case BuffType.DEF:
                 defense.value += value;

@@ -26,7 +26,11 @@ public class Boot : MonoBehaviour
         UniEvent.Initalize(); // 初始化事件系统（确保在 GameManager.Start 之前就绪）
 
         // 初始化对象池：传入自定义工厂，直接从 effect 引用实例化，不走 Resources
-        PoolMgr.Initialize(enableLayout: true, prefabFactory: (_) => Instantiate(effect));
+        PoolMgr.Initialize(enableLayout: true, prefabFactory: (name) =>
+        {
+            var prefab = Resources.Load<GameObject>(name);
+            return Instantiate(prefab != null ? prefab : effect);
+        });
     }
 
     void Start()

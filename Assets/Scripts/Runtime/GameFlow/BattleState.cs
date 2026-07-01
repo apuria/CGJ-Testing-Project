@@ -40,8 +40,35 @@ public class BattleState : BaseState
     /// <summary>
     /// 战斗回合队列
     /// </summary>
-    public Queue<BaseInfo> roundQueue;
-    public List<BaseInfo> roundList;
+    public Queue<BaseInfo> roundQueue = new();
+    public List<BaseInfo> roundList = new();
+
+    /// <summary>
+    /// 伪加载阶段计时器
+    /// </summary>
+    private float loadDelay = 0f;
+    private bool isLoadPhase = false;
+
+    /// <summary>
+    /// 当前回合的完整行动队列（在 NextRound 中构建，供 PlayerBattleState/EnemyBattleState 使用）
+    /// </summary>
+    private List<BaseInfo> currentFullQueue;
+
+    /// <summary>
+    /// 战斗是否已结束（防止重复发送 BattleEnd 事件）
+    /// </summary>
+    private bool isBattleEnded = false;
+
+    /// <summary>
+    /// 已触发的中途事件索引集合（防止每回合重复触发）
+    /// </summary>
+    private HashSet<int> triggeredMidEventIndices = new();
+
+    /// <summary>
+    /// 敌方行动后等待特效播放的计时器
+    /// </summary>
+    private float turnDelay = 0f;
+    private bool isWaitingTurnDelay = false;
     
     /// <summary>
     /// 角色列表
@@ -60,23 +87,47 @@ public class BattleState : BaseState
         base.OnCreate(machine, data);
         battleSetting = data as BattleSetting;
         battleMachine = new StateMachine();
+
+        // 在 ShowPanel 之前注册事件监听，确保 BattleState 的 HP/MP 修改
+        // 先于 BattlePanel 的 UI 刷新执行，避免 UI 显示滞后一帧
+        eventGroup.AddListener<BattleEventDefine.NextTurn>(OnHandleEventMessage);
+        eventGroup.AddListener<BattleEventDefine.NextRound>(OnHandleEventMessage);
+        eventGroup.AddListener<BattleEventDefine.EnemyHpChange>(OnHandleEventMessage);
+        eventGroup.AddListener<BattleEventDefine.RoleHpChange>(OnHandleEventMessage);
+        eventGroup.AddListener<BattleEventDefine.RoleMpChange>(OnHandleEventMessage);
+        eventGroup.AddListener<BattleEventDefine.BattleEndConfirm>(OnHandleEventMessage);
+        eventGroup.AddListener<BattleEventDefine.EnemyActionDelay>(OnHandleEventMessage);
+
         UIMgr.Instance.ShowPanel<BattlePanel>(isSync: true);
     }
 
     public override void OnEnter()
     {
-        
-        if(isBattleStart)
-            return;
-        isBattleStart = true;
-        InitBattle();
-        NextRound();
-        StartEvent(battleSetting.startEvent);
+        if (!isBattleStart)
+        {
+            // === 首次进入：初始化并处理开始事件 ===
+            isBattleStart = true;
 
-        eventGroup.AddListener<BattleEventDefine.NextTurn>(OnHandleEventMessage);
-        eventGroup.AddListener<BattleEventDefine.NextRound>(OnHandleEventMessage);
-        eventGroup.AddListener<BattleEventDefine.EnemyHpChange>(OnHandleEventMessage);
-        eventGroup.AddListener<BattleEventDefine.RoleHpChange>(OnHandleEventMessage);
+            // 初始化战斗数据 + 更新立绘（仅展示阵容）
+            InitBattle();
+
+            // 设置准备阶段计时器 1.2s
+            // 如果存在开始事件（如对话），先切换到对话状态，
+            // 对话结束后状态机通过 OnEnter 再次进入（走 else 分支）
+            isLoadPhase = true;
+            loadDelay = 1.2f;
+
+            if (battleSetting.startEvent != EBattleStartEvent.None)
+            {
+                StartEvent(battleSetting.startEvent);
+            }
+        }
+        else
+        {
+            // === 从开始事件（对话/分支）返回，重新开始准备阶段倒计时 ===
+            isLoadPhase = true;
+            loadDelay = 1.2f;
+        }
     }
 
     public override void OnExit()
@@ -87,6 +138,30 @@ public class BattleState : BaseState
     public override void OnUpdate()
     {
         battleMachine.Update();
+
+        // 加载等待阶段：1.2s 后正式开始
+        if (isLoadPhase)
+        {
+            loadDelay -= Time.deltaTime;
+            if (loadDelay <= 0f)
+            {
+                isLoadPhase = false;
+                NextRound();
+                StartTurn();
+            }
+        }
+        // 使用 else if 防止同帧处理：StartTurn() 中首个敌人行动
+        // 同步设置的 isWaitingTurnDelay 不会在当前帧被扣减
+        else if (isWaitingTurnDelay)
+        {
+            turnDelay -= Time.deltaTime;
+            if (turnDelay <= 0f)
+            {
+                isWaitingTurnDelay = false;
+                if (!isBattleEnded)
+                    EndTurn();
+            }
+        }
     }
 
     public override void OnDispose()
@@ -103,7 +178,7 @@ public class BattleState : BaseState
     {
         if(message is BattleEventDefine.NextTurn)
         {
-            NextTurn();
+            EndTurn();
         }
         else if(message is BattleEventDefine.NextRound)
         {
@@ -111,21 +186,109 @@ public class BattleState : BaseState
         }
         else if(message is BattleEventDefine.EnemyHpChange ehcMsg)
         {
-            //TODO: 处理敌人血量变化事件
-            /*
-            1. 判断敌人是否死亡
-            2. 如果敌人死亡，切换到敌人死亡状态
-            3. 如果敌人未死亡，更新敌人血量
-            */
+            if (ehcMsg.idx >= 0 && ehcMsg.idx < enemyList.Count)
+            {
+                var enemy = enemyList[ehcMsg.idx];
+                float remaining = ehcMsg.hurtValue;
+
+                // 先扣除基础防御值（仅伤害时，治疗不经过防御减免）
+                if (remaining > 0)
+                    remaining = Mathf.Max(1, remaining - enemy.defense.value);
+
+                // 再扣除临时防御值（护盾）
+                if (remaining > 0 && enemy.tempDefense > 0)
+                {
+                    float absorbed = Mathf.Min(remaining, enemy.tempDefense);
+                    enemy.tempDefense -= absorbed;
+                    remaining -= absorbed;
+                }
+
+                if (remaining > 0)
+                {
+                    enemy.hp.value -= remaining;
+                    if (enemy.hp.value < 0) enemy.hp.value = 0;
+                }
+                else if (remaining < 0)
+                {
+                    // 治疗
+                    enemy.hp.value -= remaining; // -= negative = add
+                    if (enemy.hp.value > enemy.maxHp.value) enemy.hp.value = enemy.maxHp.value;
+                }
+
+                // 受伤特效（仅伤害时，治疗不触发）
+                if (ehcMsg.hurtValue > 0)
+                {
+                    bool isDead = enemy.hp.value <= 0;
+                    BattleEventDefine.EnemyDamageEffect.SendEventMessage(ehcMsg.idx, isDead, ehcMsg.hurtValue);
+                }
+            }
+            CheckIsEnd();
         }
         else if(message is BattleEventDefine.RoleHpChange rhcMsg)
         {
-            //TODO: 处理角色血量变化事件
-            /*
-            1. 判断角色是否死亡
-            2. 如果角色死亡，切换到角色死亡状态
-            3. 如果角色未死亡，更新角色血量
-            */
+            if (rhcMsg.idx >= 0 && rhcMsg.idx < roleList.Count)
+            {
+                var role = roleList[rhcMsg.idx];
+                float remaining = rhcMsg.hurtValue;
+
+                // 先扣除基础防御值（仅伤害时，治疗不经过防御减免）
+                if (remaining > 0)
+                    remaining = Mathf.Max(1, remaining - role.defense.value);
+
+                // 再扣除临时防御值（护盾）
+                if (remaining > 0 && role.tempDefense > 0)
+                {
+                    float absorbed = Mathf.Min(remaining, role.tempDefense);
+                    role.tempDefense -= absorbed;
+                    remaining -= absorbed;
+                }
+
+                if (remaining > 0)
+                {
+                    role.hp.value -= remaining;
+                    if (role.hp.value < 0) role.hp.value = 0;
+                }
+                else if (remaining < 0)
+                {
+                    // 治疗
+                    role.hp.value -= remaining;
+                    if (role.hp.value > role.maxHp.value) role.hp.value = role.maxHp.value;
+                }
+
+                // 受伤特效（仅伤害时，治疗不触发）
+                if (rhcMsg.hurtValue > 0)
+                {
+                    bool isDead = role.hp.value <= 0;
+                    BattleEventDefine.RoleDamageEffect.SendEventMessage(rhcMsg.idx, isDead, rhcMsg.hurtValue);
+                }
+            }
+            CheckIsEnd();
+        }
+        else if(message is BattleEventDefine.RoleMpChange rmcMsg)
+        {
+            if (rmcMsg.idx >= 0 && rmcMsg.idx < roleList.Count)
+            {
+                var role = roleList[rmcMsg.idx];
+                role.mp.value -= rmcMsg.changeValue; // -= negative = add
+                if (role.mp.value < 0) role.mp.value = 0;
+                if (role.mp.value > role.maxMp.value) role.mp.value = role.maxMp.value;
+            }
+        }
+        else if(message is BattleEventDefine.BattleEndConfirm)
+        {
+            if (liveEnemyCount == 0)
+                WinEvent();
+            else if (liveRoleCount == 0)
+                LoseEvent();
+        }
+        else if(message is BattleEventDefine.EnemyActionDelay delayMsg)
+        {
+            // 已在等待中则忽略后续延迟请求，防止双击等重复触发
+            if (!isBattleEnded && !isWaitingTurnDelay)
+            {
+                isWaitingTurnDelay = true;
+                turnDelay = delayMsg.delay;
+            }
         }
     }
 
@@ -137,7 +300,7 @@ public class BattleState : BaseState
     /// </summary>
     public void InitBattle()
     {
-        //TODO: 初始化战斗
+        //初始化战斗
         /*
         1. 记录本次战斗的角色列表
         2. 记录本次战斗的敌人列表
@@ -145,66 +308,152 @@ public class BattleState : BaseState
         */
         foreach (var enemy in battleSetting.enemies)
         {
-            enemyList.Add(MonoMgr.Instantiate(enemy));
+            var instance = Object.Instantiate(enemy);
+            EnsureStatDefaults(instance);
+            enemyList.Add(instance);
         }
 
-        roleList.Add(MonoMgr.Instantiate(GameManager.Instance.mainRole));
+        var mainRoleInst = Object.Instantiate(GameManager.Instance.mainRole);
+        EnsureStatDefaults(mainRoleInst);
+        roleList.Add(mainRoleInst);
         foreach(var roleBranch in battleSetting.moreRoleBranches)
         {
-            if(GameManager.Instance.PlayerData.branchList[roleBranch.branchId] == roleBranch.choose)
+            var branches = GameManager.Instance.PlayerData.branchList;
+            bool hasKey = branches.ContainsKey(roleBranch.branchId);
+            string branchVal = hasKey ? branches[roleBranch.branchId] : null;
+
+            // 两个都为空直接添加，否则按选择值匹配
+            if (string.IsNullOrEmpty(branchVal) && string.IsNullOrEmpty(roleBranch.choose))
             {
-                roleList.Add(MonoMgr.Instantiate(GameManager.Instance.roleList[roleBranch.roleIndex]));
+                var inst = Object.Instantiate(GameManager.Instance.roleList[roleBranch.roleIndex]);
+                EnsureStatDefaults(inst);
+                roleList.Add(inst);
+            }
+            else if (hasKey && branchVal == roleBranch.choose)
+            {
+                var inst = Object.Instantiate(GameManager.Instance.roleList[roleBranch.roleIndex]);
+                EnsureStatDefaults(inst);
+                roleList.Add(inst);
             }
         }
 
+        // 重置敌方 AI 概率
+        EnemyAI.Reset();
+
+        // 发送初始化战斗UI事件：展示角色和敌人，隐藏按钮和Action界面
+        BattleEventDefine.InitBattleUI.SendEventMessage(roleList, enemyList);
     }
 
     /// <summary>
-    /// 下一个角色或者敌人行动
+    /// 为未在 Editor 中配置数值的 Stat 提供默认值，
+    /// 避免因 Stat 未序列化导致 hp/speed 全为 0 使战斗无法进行
     /// </summary>
-    public void NextTurn()
+    private static void EnsureStatDefaults(BaseInfo info)
     {
-        //TODO: 下一个角色或者敌人行动
-        /*
-        1. 从回合队列中取出下一个角色或者敌人
-        2. 判断是角色还是敌人
-        3. 将战斗状态机切换到角色行动状态或者敌人行动状态
-        4. 更新UI
-        */
-
-        CheckMidEvent();
-
-        if(roundQueue.Count == 0)
-        {
-            NextRound();
-            return;
-        }
-
-        BaseInfo info = roundQueue.Dequeue();
-        if(info is RoleInfo roleInfo)
-        {
-            battleMachine.SwitchTo<PlayerBattleState>("PlayerBattleState", new PlayerBattleInfo(roleInfo));
-        }
-        else if(info is EnemyInfo enemyInfo)
-        {
-           battleMachine.SwitchTo<EnemyBattleState>("EnemyBattleState", new EnemyBattleInfo(enemyInfo, round)); 
-        }
-        
-        //TODO: 更新UI
+        if (info == null) return;
+        // 仅当值未配置（≤0）时写入默认值；已在 Editor 中配置的值不受影响
+        if (info.maxHp.value <= 0)  info.maxHp.value = 100;
+        if (info.hp.value <= 0)     info.hp.value = info.maxHp.value;
+        if (info.maxMp.value <= 0)  info.maxMp.value = 50;
+        if (info.mp.value <= 0)     info.mp.value = info.maxMp.value;
+        if (info.defense.value <= 0) info.defense.value = 5;
+        if (info.speed.value <= 0)  info.speed.value = 10;
+        if (info.shieldValue.value <= 0) info.shieldValue.value = 10;
     }
 
     /// <summary>
-    /// 下一个回合
+    /// 开始当前顺位的行动（Peek，不 Dequeue），自动跳过已死亡的行动者
+    /// </summary>
+    private void StartTurn()
+    {
+        if (isBattleEnded)
+            return;
+
+        bool tryAgain = true;
+        while (tryAgain)
+        {
+            tryAgain = false;
+            // CheckMidEvent 在 NextRound() 中统一调用，此处不重复
+
+            if (roundQueue.Count == 0)
+            {
+                NextRound();
+            }
+
+            // 跳过本回合内已死亡的行动者
+            bool skippedDead = false;
+            while (roundQueue.Count > 0)
+            {
+                BaseInfo info = roundQueue.Peek();
+                bool isDead = (info is RoleInfo r && r.hp.value <= 0) ||
+                              (info is EnemyInfo e && e.hp.value <= 0);
+                if (!isDead)
+                    break;
+                roundQueue.Dequeue();
+                skippedDead = true;
+            }
+
+            // 有死者被跳过 → 更新完整队列（UI 不再显示死者）
+            if (skippedDead)
+            {
+                currentFullQueue = new List<BaseInfo>(roundQueue);
+            }
+
+            if (roundQueue.Count == 0)
+            {
+                NextRound();
+                if (roundQueue.Count > 0)
+                {
+                    tryAgain = true;
+                }
+                continue;
+            }
+
+            BaseInfo actor = roundQueue.Peek();
+            if (actor is RoleInfo roleInfo)
+            {
+                battleMachine.SwitchTo<PlayerBattleState>("PlayerBattleState",
+                    new PlayerBattleInfo(roleInfo, roleList, enemyList, currentFullQueue));
+            }
+            else if (actor is EnemyInfo enemyInfo)
+            {
+                battleMachine.SwitchTo<EnemyBattleState>("EnemyBattleState",
+                    new EnemyBattleInfo(enemyInfo, round, roleList, enemyList, currentFullQueue));
+            }
+        }
+    }
+
+    /// <summary>
+    /// 结束当前行动（Dequeue），开始下一顺位
+    /// </summary>
+    private void EndTurn()
+    {
+        if (isBattleEnded)
+            return;
+
+        if (roundQueue.Count > 0)
+            roundQueue.Dequeue();
+
+        // 同步更新完整队列，确保传给下一个 BattleState 的 actionQueue 反映当前状态
+        currentFullQueue = new List<BaseInfo>(roundQueue);
+
+        StartTurn();
+    }
+
+    /// <summary>
+    /// 下一个回合：重新构建回合队列和完整行动队列
     /// </summary>
     public void NextRound()
     {
+        if (isBattleEnded)
+            return;
+
         //TODO: 下一个回合
         /*
         1. 清空回合队列
         2. 计算角色和敌人的行动顺序
-        3. 将角色和敌人添加到回合队列中
-        4. 调用函数NextTurn()
-        5. 更新UI
+        3. 构建完整行动队列
+        4. 调用 StartTurn()
         */
         round++;
         CheckMidEvent();
@@ -230,6 +479,21 @@ public class BattleState : BaseState
         {
             roundQueue.Enqueue(info);
         }
+
+        // 构建完整行动队列（在当前回合内不变，供各 BattleState 使用）
+        currentFullQueue = new List<BaseInfo>(roundQueue);
+
+        // 新回合：清除所有临时防御值
+        foreach (var role in roleList)
+        {
+            if (role != null)
+                role.tempDefense = 0;
+        }
+        foreach (var enemy in enemyList)
+        {
+            if (enemy != null)
+                enemy.tempDefense = 0;
+        }
     }
 
 #endregion
@@ -238,26 +502,18 @@ public class BattleState : BaseState
 
     public void CheckIsEnd()
     {
-        //TODO: 检查战斗是否结束
-        /*
-        1. 检查存活的角色数量是否为0
-        2. 如果角色数量为0，战斗失败
-        3. 检查存活的敌人数量是否为0
-        4. 如果敌人数量为0，战斗胜利
-        */
-        if(liveRoleCount == 0)
+        if (isBattleEnded)
+            return;
+
+        if (liveRoleCount == 0)
         {
-            //TODO: 处理战斗失败事件
-            /*
-            1. 让UI显示战斗失败
-            */
+            isBattleEnded = true;
+            BattleEventDefine.BattleEnd.SendEventMessage(false);
         }
-        if(liveEnemyCount == 0)
+        else if (liveEnemyCount == 0)
         {
-            //TODO: 处理战斗胜利事件
-            /*
-            1. 让UI显示战斗胜利
-            */
+            isBattleEnded = true;
+            BattleEventDefine.BattleEnd.SendEventMessage(true);
         }
     }
 
@@ -271,9 +527,13 @@ public class BattleState : BaseState
 
         if (battleSetting == null || battleSetting.midEvents == null) return;
 
-        foreach (var midEvent in battleSetting.midEvents)
+        for (int i = 0; i < battleSetting.midEvents.Count; i++)
         {
+            var midEvent = battleSetting.midEvents[i];
             if (midEvent == null) continue;
+
+            // 已触发过的事件不再重复触发
+            if (triggeredMidEventIndices.Contains(i)) continue;
 
             switch(midEvent.triggerType)
             {
@@ -281,9 +541,10 @@ public class BattleState : BaseState
                 {
                     if (midEvent.targetIndex < 0 || midEvent.targetIndex >= roleList.Count) continue;
                     var role = roleList[midEvent.targetIndex];
-                    if (role == null || role.hp == null || role.maxHp == null) continue;
+                    if (role == null) continue;
                     if (role.hp.value <= role.maxHp.value * midEvent.hpPercentage * 0.01f)
                     {
+                        triggeredMidEventIndices.Add(i);
                         MidEvent(midEvent);
                     }
                     break;
@@ -292,9 +553,10 @@ public class BattleState : BaseState
                 {
                     if (midEvent.targetIndex < 0 || midEvent.targetIndex >= enemyList.Count) continue;
                     var enemy = enemyList[midEvent.targetIndex];
-                    if (enemy == null || enemy.hp == null || enemy.maxHp == null) continue;
+                    if (enemy == null) continue;
                     if (enemy.hp.value <= enemy.maxHp.value * midEvent.hpPercentage * 0.01f)
                     {
+                        triggeredMidEventIndices.Add(i);
                         MidEvent(midEvent);
                     }
                     break;
@@ -302,6 +564,7 @@ public class BattleState : BaseState
                 case EMidEventTriggerType.RoundCount:
                     if(round == midEvent.roundCount)
                     {
+                        triggeredMidEventIndices.Add(i);
                         MidEvent(midEvent);
                     }
                     break;
