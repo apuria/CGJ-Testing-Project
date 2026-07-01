@@ -7,7 +7,7 @@ using UniFramework.Event;
 public class BranchState : BaseState
 {
 
-//TODO: 分支系统
+//分支系统
 /*
 先初始化UI界面
 随后由UI发送消息, 让这个状态判断玩家的选择
@@ -125,7 +125,7 @@ public class BranchState : BaseState
     private void EndBranch()
     {
         // 结束当前一段剧情，玩家数据进入下一个节点，然后回到地图界面
-        //TODO: 调用UI显示剧情结束过渡效果
+        // 调用UI显示剧情结束过渡效果
         GameManager.Instance.NextNode();
         GoBackToMap();
     }

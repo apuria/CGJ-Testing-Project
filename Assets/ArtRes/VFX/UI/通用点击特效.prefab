@@ -4934,7 +4934,7 @@ MonoBehaviour:
   m_IsTrail: 0
   m_IgnoreCanvasScaler: 0
   m_AbsoluteMode: 0
-  m_Scale3D: {x: 1, y: 1, z: 1}
+  m_Scale3D: {x: 0.4, y: 0.4, z: 0.4}
   m_AnimatableProperties: []
   m_Particles:
   - {fileID: 7888540647001113562}
@@ -9881,7 +9881,7 @@ MonoBehaviour:
   m_IsTrail: 0
   m_IgnoreCanvasScaler: 0
   m_AbsoluteMode: 0
-  m_Scale3D: {x: 1, y: 1, z: 1}
+  m_Scale3D: {x: 0.4, y: 0.4, z: 0.4}
   m_AnimatableProperties: []
   m_Particles:
   - {fileID: 668177069701563047}

@@ -26,6 +26,8 @@ public class MapPanel : BasePanel
     public Image node5;
     public Image node6;
 
+    public Image nowNode;
+
     private List<Image> nodeImages;
 
 #endregion
@@ -40,6 +42,7 @@ public class MapPanel : BasePanel
     protected void Start()
     {
         eventGroup.AddListener<SceneEventDefine.UpdateMapUI>(OnHandleEventMessage);
+        UpdateNodes();
 
         exitButton.onClick.AddListener(() =>
         {
@@ -83,8 +86,6 @@ public class MapPanel : BasePanel
 
         for (int i = 0; i < nodeImages.Count && i < gameNodes.Count; i++)
         {
-            int nodeIndex = i + 1; // Node1 对应索引 1
-
             // 设置节点图标
             if (gameNodes[i].icon != null)
             {
@@ -95,16 +96,20 @@ public class MapPanel : BasePanel
             {
                 nodeImages[i].enabled = false;
             }
+        }
 
-            //TODO: 根据当前流程设置节点外观
-            /*
-            if (nodeIndex < (int)nowFlow)
-                已完成的节点（变灰/打勾）
-            else if (nodeIndex == (int)nowFlow)
-                当前节点（高亮/发光）
-            else
-                未解锁节点（锁定/暗色）
-            */
+        // 设置当前节点指示器位置
+        int flowIndex = (int)nowFlow;
+        if (flowIndex >= 0 && flowIndex < nodeImages.Count && nowNode != null)
+        {
+            var target = nodeImages[flowIndex].transform as RectTransform;
+            nowNode.enabled = true;
+            nowNode.transform.SetAsLastSibling();
+            nowNode.rectTransform.position = target.position;
+        }
+        else if (nowNode != null)
+        {
+            nowNode.enabled = false;
         }
     }
 

@@ -6,7 +6,7 @@ using UniFramework.Event;
 
 public class MapState : BaseState
 {
-//TODO: 地图状态
+// 地图状态
 /*
 1. 监听地图UI的开启按钮，点击后发送消息，跳转节点事件
 */
@@ -19,8 +19,10 @@ public class MapState : BaseState
 
     public override void OnEnter()
     {
-        
-        playerData = GameManager.Instance.PlayerData;    
+        // 回到地图时清除所有挂起的状态节点，确保状态机处于干净状态
+        Machine.ClearSuspendedNodes();
+
+        playerData = GameManager.Instance.PlayerData;
         var gm = GameManager.Instance;
         switch(playerData.NowFlow)
         {
@@ -34,6 +36,7 @@ public class MapState : BaseState
                     // 没有开始事件，直接跳到下一个节点，避免卡住
                     gm.NextNode();
                 }
+                GameEventDefine.SaveProgress.SendEventMessage();
                 break;
             case PlayerData.Flow.End:
                 if (gm.HasEndEvent)
@@ -45,9 +48,10 @@ public class MapState : BaseState
                     // 没有结束事件，直接跳到下一个
                     gm.NextNode();
                 }
+                GameEventDefine.SaveProgress.SendEventMessage();
                 break;
             default:
-                //TODO：更新地图UI
+                GameEventDefine.SaveProgress.SendEventMessage();
                 break;
         }
     }

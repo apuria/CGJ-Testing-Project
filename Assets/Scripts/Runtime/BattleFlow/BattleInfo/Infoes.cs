@@ -15,8 +15,18 @@ public struct PlayerBattleInfo : IStateData
 public struct EnemyBattleInfo : IStateData
 {
     EnemyInfo enemyInfo;
-    public EnemyBattleInfo(EnemyInfo enemyInfo)
+    int round;
+    public EnemyBattleInfo(EnemyInfo enemyInfo, int round)
     {
         this.enemyInfo = enemyInfo;
+        this.round = round;
     }
 }
+
+public enum EnemyActionType
+{
+    Defence,
+    Attack,
+    Skill
+}
+

@@ -25,13 +25,11 @@ public class PlayerData
         End
     }
 
-    private Flow nowFlow = Flow.Start;
-
-    public Flow NowFlow => nowFlow;
+    public Flow NowFlow = Flow.Start;
 
     public void NextFlow()
     {
-        nowFlow++;
+        NowFlow++;
     }
 
     public Dictionary<string, string> branchList = new();

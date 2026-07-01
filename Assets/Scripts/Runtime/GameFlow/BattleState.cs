@@ -187,10 +187,10 @@ public class BattleState : BaseState
         }
         else if(info is EnemyInfo enemyInfo)
         {
-           battleMachine.SwitchTo<EnemyBattleState>("EnemyBattleState", new EnemyBattleInfo(enemyInfo)); 
+           battleMachine.SwitchTo<EnemyBattleState>("EnemyBattleState", new EnemyBattleInfo(enemyInfo, round)); 
         }
         
-        //更新UI
+        //TODO: 更新UI
     }
 
     /// <summary>
@@ -453,7 +453,7 @@ public class BattleState : BaseState
     private void EndBranch()
     {
         // 结束当前一段剧情，玩家数据进入下一个节点，然后回到地图界面
-        //TODO: 调用UI显示剧情结束过渡效果
+        // 调用UI显示剧情结束过渡效果
         GameManager.Instance.NextNode();
         GoBackToMap();
     }

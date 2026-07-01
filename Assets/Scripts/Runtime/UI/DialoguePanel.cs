@@ -140,6 +140,7 @@ public class DialoguePanel : BasePanel
         if(message is DiaLogueEventDefine.ShowUI showUI)
         {
             speakers = showUI.speakers;
+            quitButton.gameObject.SetActive(showUI.hasReturnButton);
             background.gameObject.SetActive(showUI.hasBackground);
             if (showUI.hasBackground)
             {

@@ -26,7 +26,7 @@ public class DialogueState : BaseState
         // 重置对话索引
         index = 0;
         // 显示对话面板
-        DiaLogueEventDefine.ShowUI.SendEventMessage(nowDialogue.speakers, nowDialogue.hasBackground, nowDialogue.BackGround);
+        DiaLogueEventDefine.ShowUI.SendEventMessage(nowDialogue.speakers, nowDialogue.hasBackground, nowDialogue.BackGround, nowDialogue.hasReturnButton);
         // 更新对话面板
         var dialogue = nowDialogue.dialogues[index];
         DiaLogueEventDefine.UpdateUI.SendEventMessage(dialogue.leftSpeakerIndex, dialogue.rightSpeakerIndex, dialogue.text, dialogue.talkingSpeaker);
@@ -125,7 +125,7 @@ public class DialogueState : BaseState
     private void EndBranch()
     {
         // 结束当前一段剧情，玩家数据进入下一个节点，然后回到地图界面
-        //TODO: 调用UI显示剧情结束过渡效果
+        // 调用UI显示剧情结束过渡效果
         GameManager.Instance.NextNode();
         GoBackToMap();
     }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UniFramework.Machine;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 [CreateAssetMenu(fileName = "New Battle Setting", menuName = "Battle/New Battle Setting")]
 public class BattleSetting : ScriptableObject, IStateData
@@ -13,6 +14,7 @@ public class BattleSetting : ScriptableObject, IStateData
     5. 失败事件, 战斗失败时做什么的枚举
     6. 中途满足特定条件的事件, 做什么的枚举
     */
+    public Sprite Background; 
 
     [Tooltip("敌人列表（最多三个）")]
     public List<EnemyInfo> enemies = new();

@@ -19,4 +19,6 @@ public class SkillInfo : ScriptableObject
     1. 攻击特效
     2. 受击特效
     */
+    public GameObject attackEffect;
+    public GameObject hitEffect;
 }

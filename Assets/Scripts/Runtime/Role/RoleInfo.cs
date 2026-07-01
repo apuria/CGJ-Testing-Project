@@ -10,4 +10,5 @@ public class RoleInfo : BaseInfo
 1. 技能
 2. 大招
 */
+    public Sprite CloseUp;
 }

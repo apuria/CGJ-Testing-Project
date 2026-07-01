@@ -12,6 +12,10 @@ public class BaseInfo : ScriptableObject
 4. 缩放比例
 */
     public string Name;
+
+    public Sprite avatar;
+    public Sprite icon;
+    public float scale = 1.0f;
     public Stat maxHp;
     public Stat hp;
     public Stat maxMp;
@@ -21,6 +25,10 @@ public class BaseInfo : ScriptableObject
     public Stat speed;
     public List<SkillInfo> skills;
     public SkillInfo ultimateSkill;
+    public SkillInfo normalAttack;
+    
+    public GameObject attackEffect;
+    public GameObject hitEffect;
 
     private Dictionary<BuffInfo, int> buffs;
 

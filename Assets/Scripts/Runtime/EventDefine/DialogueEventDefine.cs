@@ -10,12 +10,14 @@ public class DiaLogueEventDefine
         public List<Speaker> speakers;
         public bool hasBackground;
         public Sprite BackGround;
-        public static void SendEventMessage(List<Speaker> speakers, bool hasBackground = false, Sprite BackGround = null)
+        public bool hasReturnButton;
+        public static void SendEventMessage(List<Speaker> speakers, bool hasBackground = false, Sprite BackGround = null, bool hasReturnButton = false)
         {
             var eventMessage = new ShowUI();
             eventMessage.speakers = speakers;
             eventMessage.hasBackground = hasBackground;
             eventMessage.BackGround = BackGround;
+            eventMessage.hasReturnButton = hasReturnButton;
             UniEvent.SendMessage(eventMessage);
         }
     }
